@@ -1,0 +1,157 @@
+Cahier des charges
+Plateforme de réservation de visites guidées théâtralisées
+1. Contexte et objectif
+Développement sur mesure d'une plateforme de réservation en ligne pour des visites guidées théâtralisées, comprenant un site public de réservation et un back-office métier permettant la gestion complète des visites, créneaux, tarifs, devis, factures et comptes clients.
+La structure porteuse est une association, non assujettie à la TVA (0% sur l'ensemble des documents commerciaux).
+2. Front-end (site public)
+2.1 Catalogue de visites
+Chaque visite est un « produit » composé de :
+image bannière
+description
+un ou plusieurs tarifs associés (adulte / enfant)
+règles de forfait et de majoration propres à la visite (voir §4)
+Chaque visite peut être affichée ou masquée du site public indépendamment. En-têtes et images de fond du site personnalisables depuis le back-office.
+2.2 Formulaire de réservation
+Champs requis :
+Nom / prénom ou raison sociale
+Téléphone
+E-mail
+Adresse postale
+Nombre de personnes (détail adultes / enfants)
+2.3 Créneaux
+Chaque créneau correspond à une seule visite, à une date et une heure données.
+Un créneau = une réservation. Dès qu'une réservation est effectuée, le créneau disparaît du site public.
+Après une annulation, le créneau ne redevient disponible qu'après republication manuelle par l'administrateur.
+3. Back-office (accès protégé par mot de passe)
+3.1 Gestion des visites
+Création, modification, suppression de visites de A à Z (contenu, tarifs, règles de forfait/majoration, visibilité).
+3.2 Onglet « Créneaux »
+Création de créneaux en lot, plusieurs années à l'avance (ex. 8, 30, 60 dates en une fois), en choisissant :
+jours de la semaine
+mois / années
+horaires
+visite(s) associée(s)
+Suppression ou masquage de créneaux, y compris en lot.
+3.3 Onglet « Calendrier »
+Vue jour par jour et vue d'ensemble de toutes les réservations en cours.
+Modification de chaque réservation, ajout de notes.
+Synchronisation avec Google Agenda en mode unidirectionnel (back-office → Google Agenda). Le back-office reste la source de vérité.
+3.4 Onglet « Comptes clients »
+Création de comptes clients.
+Historique des devis et factures rattachés à chaque compte.
+Ajout manuel d'un devis ou d'une facture à un compte client existant.
+3.5 Paramètres
+Tous les paramètres de tarification (forfaits, seuils, majoration, acompte) sont configurables individuellement, par visite — aucune valeur codée en dur.
+4. Logique de tarification
+La tarification est le point le plus complexe du système ; elle doit être entièrement paramétrable par visite et centralisée dans un moteur de règles unique.
+4.1 Paramètres par visite
+Tarif individuel adulte, tarif individuel enfant.
+Forfait 1 : seuil adultes, seuil enfants, montant forfaitaire, actif/inactif.
+Forfait 2 (optionnel, activable) : seuil global (ex. total > 50 personnes), montant forfaitaire.
+Majoration réservation tardive : montant fixe, applicable si réservation faite moins de 48h avant l'événement.
+Acompte : pourcentage (30% par défaut) et délai de règlement (1 mois par défaut), paramétrables par visite.
+4.2 Règle d'éligibilité au forfait 1
+Le groupe est éligible au forfait 1 si : nb_adultes < seuil_adultes_1 OU nb_enfants < seuil_enfants_1.
+Le groupe n'est pas éligible si les deux seuils sont dépassés simultanément.
+4.3 Règle d'application du montant (forfait 1)
+Si le groupe est éligible, le forfait s'applique par défaut, mais le coût individuel total est calculé en parallèle. Si ce coût dépasse le montant du forfait, c'est le tarif individuel qui est facturé.
+SI groupe éligible au forfait 1 :    montant = MAX(forfait_1, coût_individuel_total)
+4.4 Forfait 2 (seuil additionnel optionnel)
+Si activé et si le total de personnes dépasse le seuil défini, le forfait 2 s'applique selon exactement la même logique que le forfait 1 (substitution, jamais cumul) :
+SINON SI forfait_2 actif ET total_personnes > seuil_2 :    montant = MAX(forfait_2, coût_individuel_total)
+4.5 Cas général
+SINON :    montant = coût_individuel_total
+4.6 Cumul de forfaits
+Aucun cumul de forfaits n'est autorisé, à l'exception du mécanisme décrit en 4.4 (le forfait 2 se substitue au forfait 1, il ne s'y ajoute jamais).
+4.7 Majoration tardive
+Appliquée sur le montant final obtenu après application des règles 4.3 à 4.5 :
+SI réservation faite < 48h avant l'événement :    montant += majoration (montant fixe, paramétrable par visite)
+4.8 Modification du nombre de personnes après validation
+Si le client demande à ajouter des personnes après validation du devis, la gestion se fait manuellement par l'administrateur (pas de recalcul automatique).
+5. Cycle de réservation — devis et facturation
+5.1 Machine à états
+#
+Statut
+Déclencheur
+Actions système
+1
+Demande reçue
+Client soumet le formulaire
+Créneau marqué réservé ; e-mail auto au client
+2
+Devis interne généré
+Automatique, après #1
+Calcul par le moteur de tarification ; non visible du client
+3
+En attente de validation admin
+Automatique, après #2
+File d'attente back-office ; annotation possible
+4
+Devis validé
+Action admin
+—
+5
+Devis envoyé au client
+Automatique, après #4
+E-mail avec devis + info acompte
+6
+Acompte en attente
+Automatique, après #5
+Démarrage du compte à rebours
+7a
+Acompte reçu
+Admin pointe le règlement
+Passage à Confirmé
+7b
+Acompte expiré
+Délai dépassé
+Alerte non bloquante + e-mail client ; décision admin
+8
+Confirmé
+Suite à 7a
+Réservation verrouillée
+9
+Réalisé
+Date passée / action admin
+Génération auto de la facture finale, éditable
+10
+Facture ajustée (opt.)
+Modification manuelle admin
+Recalcul du montant
+11
+Facture envoyée
+Admin clique le bouton d'envoi
+E-mail avec facture finale
+12
+Soldé
+Admin pointe le règlement du solde
+Réservation clôturée
+
+5.2 Branche « Annulation »
+Déclenchable manuellement à tout moment entre les statuts 1 et 9.
+Si un acompte a déjà été versé : remboursement effectué manuellement par l'admin (virement), hors plateforme. Une note libre peut être ajoutée en pense-bête (montant dû, statut du remboursement).
+Le créneau associé ne redevient public qu'après republication manuelle.
+5.3 Litige sur la facture
+Pas de statut bloquant formel : une note libre peut être ajoutée sur la facture pour signaler un litige, sans empêcher la progression du workflow.
+5.4 Paiement
+Acompte et solde réglés exclusivement hors plateforme (virement ou chèque) — aucune intégration de paiement en ligne.
+Chaque règlement est pointé manuellement par l'admin dans le back-office (date, référence).
+Politique de remboursement en cas d'annulation : paramétrable.
+5.5 Documents
+Devis et facture sont deux documents distincts, tous deux à 0% de TVA.
+Devis et factures doivent pouvoir être exportés en PDF à la demande, en plus de l'envoi par e-mail.
+6. Modèle de données (entités principales)
+Visite : contenu du produit, tarifs individuels, règles de forfait (1 et 2), règle de majoration, paramètres d'acompte, statut de visibilité.
+RegleForfait : rattachée à une visite, niveau (1 ou 2), seuils, montant, actif/inactif.
+Creneau : rattaché à une visite, date, heure, statut, relation 1-1 avec une réservation.
+Reservation : rattachée à un créneau et à un client, nombre d'adultes/enfants, coordonnées, statut, notes admin.
+Devis : rattaché à une réservation, détail du calcul, statut de validation, statut de l'acompte, export PDF.
+Facture : rattachée à un devis, nombre réel de personnes, montant final, statut du solde, note de litige, export PDF.
+Client (compte client) : coordonnées, historique des devis et factures rattachés.
+7. Points restés ouverts
+Éventuelle logique de remise supplémentaire dans le cas général (aucun forfait applicable).
+Ergonomie précise de la création de créneaux en lot.
+Format exact des notifications e-mail (contenu, expéditeur, identité visuelle).
+Droits d'accès au back-office (compte admin unique ou profils différenciés).
+8. Choix d'architecture retenu
+Développement sur mesure, recommandé au vu de la complexité du moteur de tarification, de la machine à états du cycle devis/facture et de la logique métier spécifique, qu'aucun CMS ou outil no-code du marché ne couvre nativement sans contournements fragiles.
