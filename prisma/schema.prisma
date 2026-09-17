@@ -1,0 +1,267 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum NiveauForfait {
+  NIVEAU_1
+  NIVEAU_2
+}
+
+enum CreneauStatus {
+  PUBLIE // visible et réservable sur le site public
+  RESERVE // lié à une réservation active, masqué du site public
+  MASQUE // masqué manuellement par l'admin (incl. après annulation, en attente de republication)
+}
+
+enum ReservationStatus {
+  DEMANDE_RECUE // 1
+  DEVIS_INTERNE_GENERE // 2
+  EN_ATTENTE_VALIDATION_ADMIN // 3
+  DEVIS_VALIDE // 4
+  DEVIS_ENVOYE // 5
+  ACOMPTE_EN_ATTENTE // 6
+  ACOMPTE_RECU // 7a
+  ACOMPTE_EXPIRE // 7b
+  CONFIRME // 8
+  REALISE // 9
+  FACTURE_AJUSTEE // 10
+  FACTURE_ENVOYEE // 11
+  SOLDE // 12
+  ANNULE // branche annulation, déclenchable de 1 à 9
+}
+
+enum StatutPaiement {
+  EN_ATTENTE
+  RECU
+  EXPIRE
+}
+
+enum AdminRole {
+  ADMIN // MVP : seul rôle utilisé ; prêt pour des profils différenciés plus tard
+}
+
+// ---------- Core models ----------
+
+model Visite {
+  id               String  @id @default(cuid())
+  nom              String
+  slug             String  @unique
+  description      String  @db.Text
+  imageBanniereUrl String?
+  visible          Boolean @default(false)
+
+  tarifAdulte Decimal @db.Decimal(10, 2)
+  tarifEnfant Decimal @db.Decimal(10, 2)
+
+  majorationTardiveMontant     Decimal @default(0) @db.Decimal(10, 2)
+  majorationTardiveDelaiHeures Int     @default(48)
+
+  acomptePourcentage Decimal @default(30) @db.Decimal(5, 2)
+  acompteDelaiJours  Int     @default(30)
+
+  reglesForfait RegleForfait[]
+  creneaux      Creneau[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RegleForfait {
+  id       String        @id @default(cuid())
+  visiteId String
+  visite   Visite        @relation(fields: [visiteId], references: [id], onDelete: Cascade)
+  niveau   NiveauForfait
+
+  // NIVEAU_1 uniquement :
+  seuilAdultes Int?
+  seuilEnfants Int?
+  // NIVEAU_2 uniquement :
+  seuilGlobal Int?
+
+  montant Decimal @db.Decimal(10, 2)
+  actif   Boolean @default(true)
+
+  @@unique([visiteId, niveau])
+}
+
+model Creneau {
+  id        String        @id @default(cuid())
+  visiteId  String
+  visite    Visite        @relation(fields: [visiteId], references: [id])
+  dateHeure DateTime // instant UTC de la visite
+  status    CreneauStatus @default(PUBLIE)
+
+  reservation Reservation?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([visiteId, dateHeure])
+  @@index([status])
+}
+
+model Reservation {
+  id        String  @id @default(cuid())
+  creneauId String  @unique
+  creneau   Creneau @relation(fields: [creneauId], references: [id])
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  // coordonnées capturées au moment de la réservation (indépendantes d'un compte client)
+  nomOuRaisonSociale String
+  telephone          String
+  email              String
+  adressePostale     String
+  nbAdultes          Int
+  nbEnfants          Int
+
+  status          ReservationStatus @default(DEMANDE_RECUE)
+  notesAdmin      String?           @db.Text
+  dateReservation DateTime          @default(now()) // ancre pour le calcul de majoration tardive
+
+  googleEventId String? // sync unidirectionnelle back-office -> Google Agenda
+
+  historique ReservationStatusHistory[]
+  devis      Devis?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model ReservationStatusHistory {
+  id            String             @id @default(cuid())
+  reservationId String
+  reservation   Reservation        @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  fromStatus    ReservationStatus?
+  toStatus      ReservationStatus
+  changedAt     DateTime           @default(now())
+  changedBy     String? // AdminUser.email, null = système/automatique
+  note          String?            @db.Text
+
+  @@index([reservationId])
+}
+
+model Devis {
+  id     String @id @default(cuid())
+  numero String @unique // DEV-2026-00001
+
+  // Relation normale 1-1 avec une Reservation générée par le workflow, mais §3.4 exige
+  // aussi l'ajout MANUEL d'un devis à un compte client hors parcours de réservation.
+  reservationId   String?      @unique
+  reservation     Reservation? @relation(fields: [reservationId], references: [id])
+  clientId        String?
+  client          Client?      @relation(fields: [clientId], references: [id])
+  origineManuelle Boolean      @default(false)
+
+  nbAdultes           Int
+  nbEnfants           Int
+  tarifAdulteApplique Decimal @db.Decimal(10, 2)
+  tarifEnfantApplique Decimal @db.Decimal(10, 2)
+
+  forfaitApplique            NiveauForfait?
+  montantForfait              Decimal?       @db.Decimal(10, 2)
+  coutIndividuelTotal         Decimal        @db.Decimal(10, 2)
+  montantAvantMajoration      Decimal        @db.Decimal(10, 2)
+  majorationTardiveAppliquee  Boolean        @default(false)
+  montantMajoration           Decimal        @default(0) @db.Decimal(10, 2)
+  montantTotal                Decimal        @db.Decimal(10, 2)
+  tauxTVA                     Decimal        @default(0) @db.Decimal(5, 2)
+
+  acomptePourcentage         Decimal        @db.Decimal(5, 2)
+  acompteMontant              Decimal        @db.Decimal(10, 2)
+  acompteDelaiJours           Int
+  acompteDateLimite           DateTime?
+  acompteStatutPaiement       StatutPaiement @default(EN_ATTENTE)
+  acompteDateReglement        DateTime?
+  acompteReferenceReglement   String?
+
+  validePar String?
+  valideLe  DateTime?
+  envoyeLe  DateTime?
+  pdfUrl    String?
+
+  facture Facture?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Facture {
+  id       String  @id @default(cuid())
+  numero   String  @unique // FAC-2026-00001
+  devisId  String  @unique
+  devis    Devis   @relation(fields: [devisId], references: [id])
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  nbAdultesReel Int
+  nbEnfantsReel Int
+  montantFinal  Decimal @db.Decimal(10, 2)
+  tauxTVA       Decimal @default(0) @db.Decimal(5, 2)
+
+  ajuste    Boolean   @default(false)
+  ajusteLe  DateTime?
+  ajustePar String?
+
+  soldeStatutPaiement     StatutPaiement @default(EN_ATTENTE)
+  soldeDateReglement      DateTime?
+  soldeReferenceReglement String?
+
+  noteLitige String?   @db.Text
+  envoyeeLe  DateTime?
+  pdfUrl     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Client {
+  id                 String  @id @default(cuid())
+  nomOuRaisonSociale String
+  email              String  @unique
+  telephone          String?
+  adressePostale     String?
+  notes              String? @db.Text
+
+  reservations Reservation[]
+  devis        Devis[]
+  factures     Facture[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  nom          String?
+  role         AdminRole @default(ADMIN)
+  actif        Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteSettings {
+  id                 Int      @id @default(1) // ligne singleton
+  siteName           String?
+  headerImageUrl     String?
+  backgroundImageUrl String?
+  updatedAt          DateTime @updatedAt
+}
+
+model NumberingCounter {
+  id  String @id // ex. "DEVIS-2026", "FACTURE-2026"
+  seq Int    @default(0)
+}
