@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient, ReservationStatus } from "@prisma/client";
+import type { PrismaClient, ReservationStatus } from "@prisma/client";
 
 export type PrismaTransactionClient = Omit<
   PrismaClient,
