@@ -12,10 +12,10 @@ export const visiteSchema = z.object({
       "Le slug doit être en kebab-case (lettres minuscules, chiffres et tirets)."
     ),
   description: z.string().min(1, "La description est requise."),
-  imageBanniereUrl: z
-    .string()
-    .url("URL d'image invalide.")
-    .optional(),
+  // Accepte un chemin local d'upload ("/uploads/visites/xyz.jpg") aussi bien
+  // qu'une URL absolue — pas uniquement `.url()`, qui rejetterait les chemins
+  // relatifs renvoyés par la route d'upload d'image.
+  imageBanniereUrl: z.string().min(1).optional(),
   visible: z.boolean(),
   tarifAdulte: z.number().positive("Le tarif adulte doit être positif."),
   tarifEnfant: z.number().positive("Le tarif enfant doit être positif."),

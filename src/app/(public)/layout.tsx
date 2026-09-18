@@ -1,0 +1,46 @@
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  const settings = await prisma.siteSettings.findUnique({ where: { id: 1 } });
+
+  return (
+    <div
+      className="flex min-h-full flex-1 flex-col bg-cover bg-center bg-fixed"
+      style={
+        settings?.backgroundImageUrl
+          ? { backgroundImage: `url(${settings.backgroundImageUrl})` }
+          : undefined
+      }
+    >
+      <header className="border-b border-stone-200 bg-white/90 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+          <Link href="/" className="flex items-center gap-3">
+            {settings?.headerImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={settings.headerImageUrl}
+                alt={settings.siteName ?? "Logo"}
+                className="h-10 w-auto"
+              />
+            ) : null}
+            <span className="text-lg font-semibold">
+              {settings?.siteName ?? "Visites guidées théâtralisées"}
+            </span>
+          </Link>
+          <nav className="text-sm">
+            <Link href="/" className="text-stone-600 hover:text-stone-900">
+              Nos visites
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
+
+      <footer className="border-t border-stone-200 bg-white/90 py-6 text-center text-sm text-stone-500">
+        {settings?.siteName ?? "Visites guidées théâtralisées"}
+      </footer>
+    </div>
+  );
+}
