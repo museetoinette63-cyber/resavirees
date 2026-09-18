@@ -4,17 +4,17 @@ import Credentials from "next-auth/providers/credentials";
 import type { JWT } from "next-auth/jwt";
 
 import { prisma } from "./prisma";
+import { authConfig } from "./auth.config";
 
 // NextAuth v5 config for the back-office. Single AdminUser account for the
 // MVP (see AdminRole enum in prisma/schema.prisma — ready for multiple
 // profiles later without a schema rewrite). JWT session strategy: no DB
 // session table, credentials cannot be persisted server-side per Auth.js
-// constraints.
+// constraints. Builds on authConfig (auth.config.ts) — see that file for why
+// the Credentials provider/prisma/bcrypt live here and not there.
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   session: { strategy: "jwt" },
-  pages: {
-    signIn: "/admin/login",
-  },
   providers: [
     Credentials({
       credentials: {
@@ -56,17 +56,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    authorized({ auth: session, request }) {
-      const { pathname } = request.nextUrl;
-      const isAdminRoute = pathname.startsWith("/admin");
-      const isLoginPage = pathname === "/admin/login";
-
-      if (!isAdminRoute || isLoginPage) {
-        return true;
-      }
-
-      return !!session?.user;
-    },
+    ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
