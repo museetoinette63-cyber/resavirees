@@ -2,10 +2,14 @@
 // name `proxy` instead of `middleware`) — see node_modules/next/dist/docs.
 export { auth as proxy } from "@/lib/auth";
 
-// Protects every /admin/* route except /admin/login. The actual
-// allow/redirect decision lives in `callbacks.authorized` in src/lib/auth.ts
-// — returning false there redirects unauthenticated requests to
-// pages.signIn ("/admin/login").
+// Protects every /admin/* PAGE route except /admin/login (redirects to
+// pages.signIn via `callbacks.authorized` in src/lib/auth.ts).
+//
+// Deliberately does NOT cover /api/admin/*: a redirect-to-login response is
+// the wrong shape for a fetch()/API caller, and per Next.js 16's own proxy
+// docs, Server Functions/route handlers should never rely on proxy alone —
+// every /api/admin/* route handler must start with its own `auth()` check
+// and return 401 JSON when unauthenticated.
 export const config = {
   matcher: ["/admin/:path*"],
 };

@@ -1,0 +1,43 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+
+const settingsSchema = z.object({
+  siteName: z.string().min(1).optional().nullable(),
+  headerImageUrl: z.string().min(1).optional().nullable(),
+  backgroundImageUrl: z.string().min(1).optional().nullable(),
+});
+
+export async function GET() {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const settings = await prisma.siteSettings.findUnique({ where: { id: 1 } });
+  return NextResponse.json({ settings });
+}
+
+export async function PUT(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const json = await request.json().catch(() => null);
+  const parsed = settingsSchema.safeParse(json);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const data = parsed.data;
+
+  const settings = await prisma.siteSettings.upsert({
+    where: { id: 1 },
+    create: { id: 1, ...data },
+    update: data,
+  });
+
+  return NextResponse.json({ settings });
+}
