@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { formatEuros } from "@/lib/formatMoney";
 import CalendrierMensuel from "@/components/public/CalendrierMensuel";
 
+// Créneau availability changes constantly — must always be rendered fresh,
+// never statically prerendered (see (public)/page.tsx for full rationale).
+export const dynamic = "force-dynamic";
+
 export default async function VisiteDetailPage({
   params,
   searchParams,

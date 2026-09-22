@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
+// Reads SiteSettings directly — admin can change header/background at any
+// time, and this must never be statically prerendered (see (public)/page.tsx
+// for the full rationale, incl. avoiding a DATABASE_URL-at-build issue).
+export const dynamic = "force-dynamic";
+
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const settings = await prisma.siteSettings.findUnique({ where: { id: 1 } });
 

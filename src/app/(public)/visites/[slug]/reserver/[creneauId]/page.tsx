@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { formatDateTimeParis } from "@/lib/formatDate";
 import ReservationForm from "@/components/public/ReservationForm";
 
+// Must re-check the créneau's live status on every request — never
+// statically prerendered (see (public)/page.tsx for full rationale).
+export const dynamic = "force-dynamic";
+
 export default async function ReserverPage({
   params,
 }: {

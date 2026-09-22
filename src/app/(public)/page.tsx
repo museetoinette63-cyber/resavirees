@@ -2,6 +2,11 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatEuros } from "@/lib/formatMoney";
 
+// Availability/visibility can change at any moment via the back-office, and
+// this queries the DB directly — never statically prerender it (also avoids
+// needing DATABASE_URL to be resolvable at build time, e.g. on Vercel).
+export const dynamic = "force-dynamic";
+
 export default async function CataloguePage() {
   const visites = await prisma.visite.findMany({
     where: { visible: true },
