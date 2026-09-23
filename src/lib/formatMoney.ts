@@ -12,3 +12,15 @@ export function formatEuros(value: Prisma.Decimal | number): string {
     currency: "EUR",
   }).format(amount);
 }
+
+/**
+ * Same formatting as formatEuros, but for a plain integer-cents amount (the
+ * pricing engine's native unit) — kept dependency-free (no @prisma/client
+ * import) so it's cheap to use from client components like ReservationForm.
+ */
+export function formatCentsEuros(cents: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+  }).format(cents / 100);
+}

@@ -1,26 +1,45 @@
 @import "tailwindcss";
 
+/*
+ * Palette "affiche de théâtre rétro" : crème chaude en fond, encre brune
+ * pour le texte, terracotta comme couleur d'action principale, or moutarde
+ * en accent. Associée à une serif d'affiche (Fraunces) pour les titres et
+ * une sans-serif propre (Geist) pour le corps de texte — contraste
+ * "moderne mais rétro" demandé.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbf2e3;
+  --foreground: #2e2118;
+
+  --color-cream: #fbf2e3;
+  --color-cream-2: #f5e6cc;
+  --color-ink: #2e2118;
+  --color-ink-soft: #6b5745;
+  --color-rust: #be4a2e;
+  --color-rust-dark: #9c3b22;
+  --color-gold: #c68a2e;
+  --color-gold-light: #e8c77a;
+  --color-border-warm: #e3cfa8;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-cream: var(--color-cream);
+  --color-cream-2: var(--color-cream-2);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-rust: var(--color-rust);
+  --color-rust-dark: var(--color-rust-dark);
+  --color-gold: var(--color-gold);
+  --color-gold-light: var(--color-gold-light);
+  --color-border-warm: var(--color-border-warm);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-fraunces);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }

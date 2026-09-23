@@ -36,7 +36,7 @@ export default async function VisiteDetailPage({
   return (
     <article className="space-y-8">
       {indisponible ? (
-        <p className="rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p className="rounded-md border-2 border-gold bg-gold-light/30 px-4 py-3 text-sm text-rust-dark">
           Ce créneau vient d&apos;être réservé par quelqu&apos;un d&apos;autre. Merci d&apos;en choisir un
           nouveau ci-dessous.
         </p>
@@ -52,27 +52,31 @@ export default async function VisiteDetailPage({
       ) : null}
 
       <div>
-        <h1 className="text-2xl font-semibold text-stone-900">{visite.nom}</h1>
-        <p className="mt-4 whitespace-pre-line text-stone-700">{visite.description}</p>
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-rust-dark">
+          {visite.nom}
+        </h1>
+        <p className="mt-4 whitespace-pre-line text-ink-soft">{visite.description}</p>
       </div>
 
-      <div className="flex flex-wrap gap-4 rounded-lg border border-stone-200 bg-white p-4 text-sm">
-        <p className="text-stone-700">
-          <span className="font-medium text-stone-900">Tarif adulte :</span>{" "}
+      <div className="flex flex-wrap gap-4 rounded-lg border-2 border-border-warm bg-cream-2 p-4 text-sm">
+        <p className="text-ink-soft">
+          <span className="font-medium text-ink">Tarif adulte :</span>{" "}
           {formatEuros(visite.tarifAdulte)}
         </p>
-        <p className="text-stone-700">
-          <span className="font-medium text-stone-900">Tarif enfant :</span>{" "}
+        <p className="text-ink-soft">
+          <span className="font-medium text-ink">Tarif enfant :</span>{" "}
           {formatEuros(visite.tarifEnfant)}
         </p>
       </div>
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-stone-900">Choisissez une date</h2>
+        <h2 className="mb-4 font-display text-xl font-semibold text-rust-dark">
+          Choisissez une date
+        </h2>
         {creneauxSerialises.length > 0 ? (
           <CalendrierMensuel visiteSlug={visite.slug} creneaux={creneauxSerialises} />
         ) : (
-          <p className="rounded-lg border border-stone-200 bg-white p-6 text-center text-stone-500">
+          <p className="rounded-lg border-2 border-border-warm bg-cream-2 p-6 text-center text-ink-soft">
             Aucun créneau n&apos;est disponible pour le moment. Revenez bientôt !
           </p>
         )}

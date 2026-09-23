@@ -73,29 +73,29 @@ export default function CalendrierMensuel({ visiteSlug, creneaux }: CalendrierMe
   const creneauReference = selectedCreneaux[0];
 
   return (
-    <div className="rounded-lg border border-stone-200 bg-white p-4 sm:p-6">
+    <div className="rounded-lg border-2 border-border-warm bg-cream-2 p-4 sm:p-6">
       <div className="mb-4 flex items-center justify-between">
         <button
           type="button"
           onClick={() => setDisplayedMonth((mois) => subMonths(mois, 1))}
           disabled={!peutReculer}
-          className="rounded-md px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-md px-3 py-1.5 text-sm font-medium text-ink-soft hover:bg-gold-light/30 disabled:cursor-not-allowed disabled:opacity-40"
         >
           ← Mois précédent
         </button>
-        <p className="text-sm font-semibold capitalize text-stone-900">
+        <p className="font-display text-base font-semibold capitalize text-rust-dark">
           {format(displayedMonth, "MMMM yyyy", { locale: fr })}
         </p>
         <button
           type="button"
           onClick={() => setDisplayedMonth((mois) => addMonths(mois, 1))}
-          className="rounded-md px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-stone-100"
+          className="rounded-md px-3 py-1.5 text-sm font-medium text-ink-soft hover:bg-gold-light/30"
         >
           Mois suivant →
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium uppercase text-stone-400">
+      <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium uppercase text-ink-soft/70">
         {JOURS_SEMAINE.map((jour) => (
           <div key={jour} className="py-1">
             {jour}
@@ -120,11 +120,11 @@ export default function CalendrierMensuel({ visiteSlug, creneaux }: CalendrierMe
               onClick={() => setSelectedDayKey(key)}
               className={[
                 "aspect-square rounded-md text-sm transition",
-                !dansLeMois ? "text-stone-300" : "",
+                !dansLeMois ? "text-ink-soft/30" : "",
                 aDesCreneaux
-                  ? "cursor-pointer bg-stone-900 font-semibold text-white hover:bg-stone-700"
-                  : "cursor-default text-stone-700",
-                estSelectionne ? "ring-2 ring-stone-900 ring-offset-1" : "",
+                  ? "cursor-pointer bg-rust font-semibold text-cream hover:bg-rust-dark"
+                  : "cursor-default text-ink-soft",
+                estSelectionne ? "ring-2 ring-gold ring-offset-1 ring-offset-cream-2" : "",
               ]
                 .filter(Boolean)
                 .join(" ")}
@@ -136,8 +136,8 @@ export default function CalendrierMensuel({ visiteSlug, creneaux }: CalendrierMe
       </div>
 
       {selectedDayKey && creneauReference ? (
-        <div className="mt-6 border-t border-stone-200 pt-4">
-          <p className="mb-2 text-sm font-medium text-stone-900">
+        <div className="mt-6 border-t-2 border-border-warm pt-4">
+          <p className="mb-2 text-sm font-medium text-ink">
             Créneaux disponibles le{" "}
             {formatInTimeZone(creneauReference.dateHeure, TIME_ZONE, "EEEE d MMMM yyyy", { locale: fr })}
           </p>
@@ -147,7 +147,7 @@ export default function CalendrierMensuel({ visiteSlug, creneaux }: CalendrierMe
                 <button
                   type="button"
                   onClick={() => router.push(`/visites/${visiteSlug}/reserver/${creneau.id}`)}
-                  className="rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 hover:border-stone-900 hover:bg-stone-900 hover:text-white"
+                  className="rounded-md border-2 border-gold px-3 py-1.5 text-sm font-medium text-rust-dark hover:bg-gold hover:text-cream"
                 >
                   {formatInTimeZone(creneau.dateHeure, TIME_ZONE, "HH:mm", { locale: fr })}
                 </button>
@@ -156,7 +156,7 @@ export default function CalendrierMensuel({ visiteSlug, creneaux }: CalendrierMe
           </ul>
         </div>
       ) : (
-        <p className="mt-6 text-sm text-stone-500">
+        <p className="mt-6 text-sm text-ink-soft">
           Sélectionnez un jour en surbrillance pour voir les horaires disponibles.
         </p>
       )}

@@ -1,11 +1,24 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { reservationSchema } from "@/lib/validation/reservationSchema";
+import { calculerTarif, type ForfaitNiveau1Config, type ForfaitNiveau2Config } from "@/lib/pricing/pricingEngine";
+import { formatCentsEuros } from "@/lib/formatMoney";
+
+export interface PricingConfig {
+  tarifAdulte: number;
+  tarifEnfant: number;
+  forfait1: ForfaitNiveau1Config | null;
+  forfait2: ForfaitNiveau2Config | null;
+  majorationTardiveMontant: number;
+  majorationTardiveDelaiHeures: number;
+  dateEvenement: string;
+}
 
 interface ReservationFormProps {
   creneauId: string;
+  pricingConfig: PricingConfig;
 }
 
 interface FormState {
@@ -33,7 +46,7 @@ const ETAT_INITIAL: FormState = {
  * plus disponible, réservé entre-temps par quelqu'un d'autre), affiche le
  * message inline sans faire planter la page.
  */
-export default function ReservationForm({ creneauId }: ReservationFormProps) {
+export default function ReservationForm({ creneauId, pricingConfig }: ReservationFormProps) {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(ETAT_INITIAL);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -43,6 +56,28 @@ export default function ReservationForm({ creneauId }: ReservationFormProps) {
   function handleChange<K extends keyof FormState>(field: K, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
+
+  // Aperçu de prix en direct : rejoue le même moteur de tarification que le
+  // serveur (§4 du cahier des charges), côté client, à chaque changement du
+  // nombre de participants. `dateReservation` = maintenant, comme le fera
+  // réellement l'API au moment de la soumission.
+  const nbAdultes = Math.max(0, Number(form.nbAdultes) || 0);
+  const nbEnfants = Math.max(0, Number(form.nbEnfants) || 0);
+  const apercu = useMemo(() => {
+    if (nbAdultes + nbEnfants <= 0) return null;
+    return calculerTarif({
+      nbAdultes,
+      nbEnfants,
+      tarifAdulte: pricingConfig.tarifAdulte,
+      tarifEnfant: pricingConfig.tarifEnfant,
+      forfait1: pricingConfig.forfait1,
+      forfait2: pricingConfig.forfait2,
+      majorationTardiveMontant: pricingConfig.majorationTardiveMontant,
+      majorationTardiveDelaiHeures: pricingConfig.majorationTardiveDelaiHeures,
+      dateReservation: new Date(),
+      dateEvenement: new Date(pricingConfig.dateEvenement),
+    });
+  }, [nbAdultes, nbEnfants, pricingConfig]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -97,29 +132,31 @@ export default function ReservationForm({ creneauId }: ReservationFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-lg border border-stone-200 bg-white p-6 shadow-sm"
+      className="space-y-4 rounded-lg border-2 border-border-warm bg-cream-2 p-6 shadow-sm"
     >
       {formError ? (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</p>
+        <p className="rounded-md border-2 border-rust bg-rust/10 px-3 py-2 text-sm text-rust-dark">
+          {formError}
+        </p>
       ) : null}
 
       <div className="space-y-1">
-        <label htmlFor="nomOuRaisonSociale" className="text-sm font-medium text-stone-700">
+        <label htmlFor="nomOuRaisonSociale" className="text-sm font-medium text-ink">
           Nom ou raison sociale
         </label>
         <input
           id="nomOuRaisonSociale"
           value={form.nomOuRaisonSociale}
           onChange={(e) => handleChange("nomOuRaisonSociale", e.target.value)}
-          className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+          className="w-full rounded-md border-2 border-border-warm bg-cream px-3 py-2 text-sm focus:border-rust focus:outline-none"
         />
         {fieldErrors.nomOuRaisonSociale ? (
-          <p className="text-xs text-red-600">{fieldErrors.nomOuRaisonSociale}</p>
+          <p className="text-xs text-rust-dark">{fieldErrors.nomOuRaisonSociale}</p>
         ) : null}
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="telephone" className="text-sm font-medium text-stone-700">
+        <label htmlFor="telephone" className="text-sm font-medium text-ink">
           Téléphone
         </label>
         <input
@@ -127,13 +164,13 @@ export default function ReservationForm({ creneauId }: ReservationFormProps) {
           type="tel"
           value={form.telephone}
           onChange={(e) => handleChange("telephone", e.target.value)}
-          className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+          className="w-full rounded-md border-2 border-border-warm bg-cream px-3 py-2 text-sm focus:border-rust focus:outline-none"
         />
-        {fieldErrors.telephone ? <p className="text-xs text-red-600">{fieldErrors.telephone}</p> : null}
+        {fieldErrors.telephone ? <p className="text-xs text-rust-dark">{fieldErrors.telephone}</p> : null}
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="email" className="text-sm font-medium text-stone-700">
+        <label htmlFor="email" className="text-sm font-medium text-ink">
           E-mail
         </label>
         <input
@@ -141,13 +178,13 @@ export default function ReservationForm({ creneauId }: ReservationFormProps) {
           type="email"
           value={form.email}
           onChange={(e) => handleChange("email", e.target.value)}
-          className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+          className="w-full rounded-md border-2 border-border-warm bg-cream px-3 py-2 text-sm focus:border-rust focus:outline-none"
         />
-        {fieldErrors.email ? <p className="text-xs text-red-600">{fieldErrors.email}</p> : null}
+        {fieldErrors.email ? <p className="text-xs text-rust-dark">{fieldErrors.email}</p> : null}
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="adressePostale" className="text-sm font-medium text-stone-700">
+        <label htmlFor="adressePostale" className="text-sm font-medium text-ink">
           Adresse postale
         </label>
         <textarea
@@ -155,16 +192,16 @@ export default function ReservationForm({ creneauId }: ReservationFormProps) {
           value={form.adressePostale}
           onChange={(e) => handleChange("adressePostale", e.target.value)}
           rows={2}
-          className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+          className="w-full rounded-md border-2 border-border-warm bg-cream px-3 py-2 text-sm focus:border-rust focus:outline-none"
         />
         {fieldErrors.adressePostale ? (
-          <p className="text-xs text-red-600">{fieldErrors.adressePostale}</p>
+          <p className="text-xs text-rust-dark">{fieldErrors.adressePostale}</p>
         ) : null}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label htmlFor="nbAdultes" className="text-sm font-medium text-stone-700">
+          <label htmlFor="nbAdultes" className="text-sm font-medium text-ink">
             Adultes
           </label>
           <input
@@ -173,11 +210,11 @@ export default function ReservationForm({ creneauId }: ReservationFormProps) {
             min={0}
             value={form.nbAdultes}
             onChange={(e) => handleChange("nbAdultes", e.target.value)}
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+            className="w-full rounded-md border-2 border-border-warm bg-cream px-3 py-2 text-sm focus:border-rust focus:outline-none"
           />
         </div>
         <div className="space-y-1">
-          <label htmlFor="nbEnfants" className="text-sm font-medium text-stone-700">
+          <label htmlFor="nbEnfants" className="text-sm font-medium text-ink">
             Enfants
           </label>
           <input
@@ -186,16 +223,42 @@ export default function ReservationForm({ creneauId }: ReservationFormProps) {
             min={0}
             value={form.nbEnfants}
             onChange={(e) => handleChange("nbEnfants", e.target.value)}
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+            className="w-full rounded-md border-2 border-border-warm bg-cream px-3 py-2 text-sm focus:border-rust focus:outline-none"
           />
         </div>
       </div>
-      {fieldErrors.nbAdultes ? <p className="text-xs text-red-600">{fieldErrors.nbAdultes}</p> : null}
+      {fieldErrors.nbAdultes ? <p className="text-xs text-rust-dark">{fieldErrors.nbAdultes}</p> : null}
+
+      {apercu ? (
+        <div className="space-y-2 rounded-md border-2 border-gold bg-gold-light/25 p-4">
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm font-medium text-ink">Prix estimé</span>
+            <span className="font-display text-2xl font-semibold text-rust-dark">
+              {formatCentsEuros(apercu.montantTotal)}
+            </span>
+          </div>
+          {apercu.forfaitApplique ? (
+            <p className="text-xs text-ink-soft">
+              ⓘ Un tarif de groupe minimum de {formatCentsEuros(apercu.montantForfait ?? 0)} s&apos;applique
+              pour ce nombre de participants.
+            </p>
+          ) : null}
+          {apercu.majorationTardiveAppliquee ? (
+            <p className="text-xs text-ink-soft">
+              ⓘ Majoration de {formatCentsEuros(apercu.montantMajoration)} incluse : réservation à moins de{" "}
+              {pricingConfig.majorationTardiveDelaiHeures}h de la visite.
+            </p>
+          ) : null}
+          <p className="text-xs text-ink-soft/80">
+            Ce montant est indicatif ; le devis définitif vous sera envoyé par e-mail après validation.
+          </p>
+        </div>
+      ) : null}
 
       <button
         type="submit"
         disabled={submitting}
-        className="w-full rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-md bg-rust px-4 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-rust-dark disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? "Envoi en cours…" : "Confirmer la réservation"}
       </button>

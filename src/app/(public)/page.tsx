@@ -16,14 +16,16 @@ export default async function CataloguePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-stone-900">Nos visites guidées théâtralisées</h1>
-        <p className="mt-2 text-stone-600">
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-rust-dark">
+          Nos visites guidées théâtralisées
+        </h1>
+        <p className="mt-2 text-ink-soft">
           Découvrez nos parcours et réservez votre créneau en ligne.
         </p>
       </div>
 
       {visites.length === 0 ? (
-        <p className="rounded-lg border border-stone-200 bg-white p-6 text-center text-stone-500">
+        <p className="rounded-lg border-2 border-border-warm bg-cream-2 p-6 text-center text-ink-soft">
           Aucune visite n&apos;est disponible à la réservation pour le moment. Revenez bientôt !
         </p>
       ) : (
@@ -32,7 +34,7 @@ export default async function CataloguePage() {
             <Link
               key={visite.id}
               href={`/visites/${visite.slug}`}
-              className="group overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm transition hover:shadow-md"
+              className="group overflow-hidden rounded-lg border-2 border-border-warm bg-cream-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rust/10"
             >
               {visite.imageBanniereUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -42,16 +44,16 @@ export default async function CataloguePage() {
                   className="h-44 w-full object-cover"
                 />
               ) : (
-                <div className="flex h-44 w-full items-center justify-center bg-stone-100 text-sm text-stone-400">
+                <div className="flex h-44 w-full items-center justify-center bg-gold-light/30 text-sm text-ink-soft">
                   Pas d&apos;image
                 </div>
               )}
               <div className="space-y-2 p-5">
-                <h2 className="text-lg font-semibold text-stone-900 group-hover:underline">
+                <h2 className="font-display text-lg font-semibold text-ink group-hover:text-rust-dark">
                   {visite.nom}
                 </h2>
-                <p className="line-clamp-3 text-sm text-stone-600">{visite.description}</p>
-                <p className="pt-1 text-sm font-medium text-stone-900">
+                <p className="line-clamp-3 text-sm text-ink-soft">{visite.description}</p>
+                <p className="pt-1 text-sm font-medium text-rust-dark">
                   Adulte {formatEuros(visite.tarifAdulte)} · Enfant {formatEuros(visite.tarifEnfant)}
                 </p>
               </div>
