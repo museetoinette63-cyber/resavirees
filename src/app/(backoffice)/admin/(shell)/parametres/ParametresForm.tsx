@@ -13,6 +13,8 @@ export type SiteSettingsInitial = {
   emailContact: string | null;
   telephoneContact: string | null;
   cgvTexte: string | null;
+  sonAmbianceUrl: string | null;
+  sonAmbianceNom: string | null;
 };
 
 async function uploadImage(file: File): Promise<string> {
@@ -22,6 +24,16 @@ async function uploadImage(file: File): Promise<string> {
   const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
   const body = await res.json();
   if (!res.ok) throw new Error(body?.error ?? "Échec de l'envoi de l'image.");
+  return body.url as string;
+}
+
+async function uploadAudio(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("folder", "audio");
+  const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body?.error ?? "Échec de l'envoi du fichier audio.");
   return body.url as string;
 }
 
@@ -38,9 +50,12 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
   const [emailContact, setEmailContact] = useState(initial.emailContact ?? "");
   const [telephoneContact, setTelephoneContact] = useState(initial.telephoneContact ?? "");
   const [cgvTexte, setCgvTexte] = useState(initial.cgvTexte ?? "");
+  const [sonAmbianceUrl, setSonAmbianceUrl] = useState(initial.sonAmbianceUrl ?? "");
+  const [sonAmbianceNom, setSonAmbianceNom] = useState(initial.sonAmbianceNom ?? "");
 
   const [uploadingHeader, setUploadingHeader] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
+  const [uploadingSon, setUploadingSon] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState(false);
@@ -73,6 +88,20 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
     }
   }
 
+  async function handleSonUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingSon(true);
+    setErrors([]);
+    try {
+      setSonAmbianceUrl(await uploadAudio(file));
+    } catch (err) {
+      setErrors([err instanceof Error ? err.message : "Erreur inconnue."]);
+    } finally {
+      setUploadingSon(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrors([]);
@@ -92,6 +121,8 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
           emailContact: emailContact || null,
           telephoneContact: telephoneContact || null,
           cgvTexte: cgvTexte || null,
+          sonAmbianceUrl: sonAmbianceUrl || null,
+          sonAmbianceNom: sonAmbianceNom || null,
         }),
       });
       const body = await res.json();
@@ -257,9 +288,46 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
         </div>
       </section>
 
+      <section className="space-y-4 rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
+        <div>
+          <h2 className="text-sm font-semibold text-stone-900">Ambiance sonore</h2>
+          <p className="mt-1 text-xs text-stone-500">
+            Fichier audio (mp3, ogg ou wav, 15 Mo max) joué en boucle sur le site public. Les
+            visiteurs doivent cliquer sur le bouton dédié pour l&apos;activer : aucune lecture
+            automatique.
+          </p>
+        </div>
+
+        <div className="space-y-1">
+          <label className={labelClass} htmlFor="sonAmbiance">Fichier audio</label>
+          <input
+            id="sonAmbiance"
+            type="file"
+            accept="audio/mpeg,audio/ogg,audio/wav,audio/x-wav"
+            onChange={handleSonUpload}
+            disabled={uploadingSon}
+          />
+          {uploadingSon ? <p className="text-xs text-stone-500">Envoi en cours…</p> : null}
+          {sonAmbianceUrl ? (
+            <audio controls src={sonAmbianceUrl} className="mt-2 w-full max-w-sm" />
+          ) : null}
+        </div>
+
+        <div className="space-y-1">
+          <label className={labelClass} htmlFor="sonAmbianceNom">Nom affiché</label>
+          <input
+            id="sonAmbianceNom"
+            className={inputClass}
+            value={sonAmbianceNom}
+            onChange={(e) => setSonAmbianceNom(e.target.value)}
+            placeholder="Ex. Horloge comtoise, Feu de cheminée…"
+          />
+        </div>
+      </section>
+
       <button
         type="submit"
-        disabled={saving || uploadingHeader || uploadingBackground}
+        disabled={saving || uploadingHeader || uploadingBackground || uploadingSon}
         className="rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50"
       >
         {saving ? "Enregistrement…" : "Enregistrer"}

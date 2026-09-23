@@ -18,6 +18,8 @@ export default async function AdminParametresPage() {
           emailContact: settings?.emailContact ?? null,
           telephoneContact: settings?.telephoneContact ?? null,
           cgvTexte: settings?.cgvTexte ?? null,
+          sonAmbianceUrl: settings?.sonAmbianceUrl ?? null,
+          sonAmbianceNom: settings?.sonAmbianceNom ?? null,
         }}
       />
     </div>

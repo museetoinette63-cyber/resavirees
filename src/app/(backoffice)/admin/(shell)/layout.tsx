@@ -12,6 +12,8 @@ const NAV_ITEMS = [
   { href: "/admin/devis", label: "Devis" },
   { href: "/admin/factures", label: "Factures" },
   { href: "/admin/clients", label: "Comptes clients" },
+  { href: "/admin/blocs", label: "Contenu" },
+  { href: "/admin/carrousel", label: "Carrousel" },
   { href: "/admin/parametres", label: "Paramètres" },
 ] as const;
 

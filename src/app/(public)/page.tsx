@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatEuros } from "@/lib/formatMoney";
+import BlocsContenu from "@/components/public/BlocsContenu";
 
 // Availability/visibility can change at any moment via the back-office, and
 // this queries the DB directly — never statically prerender it (also avoids
@@ -8,10 +9,17 @@ import { formatEuros } from "@/lib/formatMoney";
 export const dynamic = "force-dynamic";
 
 export default async function CataloguePage() {
-  const visites = await prisma.visite.findMany({
-    where: { visible: true },
-    orderBy: { nom: "asc" },
-  });
+  const [visites, blocs] = await Promise.all([
+    prisma.visite.findMany({
+      where: { visible: true },
+      orderBy: { nom: "asc" },
+    }),
+    prisma.blocContenu.findMany({
+      where: { emplacement: "ACCUEIL", actif: true },
+      orderBy: { ordre: "asc" },
+      select: { id: true, type: true, titre: true, contenu: true, imageUrl: true },
+    }),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -23,6 +31,8 @@ export default async function CataloguePage() {
           Découvrez nos parcours et réservez votre créneau en ligne.
         </p>
       </div>
+
+      <BlocsContenu blocs={blocs} />
 
       {visites.length === 0 ? (
         <p className="rounded-lg border-2 border-border-warm bg-cream-2 p-6 text-center text-ink-soft">

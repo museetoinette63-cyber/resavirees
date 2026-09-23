@@ -17,6 +17,10 @@ const settingsSchema = z.object({
   emailContact: z.string().email("Adresse email invalide.").optional().nullable(),
   telephoneContact: z.string().min(1).optional().nullable(),
   cgvTexte: z.string().min(1).optional().nullable(),
+  // Ambiance sonore optionnelle (voir prisma/schema.prisma SiteSettings) —
+  // fichier + nom d'affichage renseignés ensemble depuis le formulaire.
+  sonAmbianceUrl: z.string().min(1).optional().nullable(),
+  sonAmbianceNom: z.string().min(1).optional().nullable(),
 });
 
 export async function GET() {
