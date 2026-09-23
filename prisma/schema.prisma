@@ -75,6 +75,33 @@ model Visite {
 
   reglesForfait RegleForfait[]
   creneaux      Creneau[]
+  produits      Produit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * Catalogue de produits/prestations facturables, sélectionnables comme
+ * lignes sur un devis ou une facture (DevisLigne/FactureLigne). Distinct des
+ * `Visite` (qui pilotent le site public + les créneaux) : un produit peut
+ * représenter une visite (lien optionnel `visiteId`, pratique pour
+ * pré-remplir la ligne générée automatiquement à la réservation) ou tout
+ * autre article facturable (supplément, prestation annexe...) sans lien.
+ */
+model Produit {
+  id           String  @id @default(cuid())
+  nom          String // dénomination
+  description  String? @db.Text
+  prixUnitaire Decimal @db.Decimal(10, 2)
+  dureeMinutes Int? // durée typique de la prestation, en minutes
+  actif        Boolean @default(true)
+
+  visiteId String?
+  visite   Visite? @relation(fields: [visiteId], references: [id])
+
+  devisLignes   DevisLigne[]
+  factureLignes FactureLigne[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -197,10 +224,42 @@ model Devis {
   envoyeLe  DateTime?
   pdfUrl    String?
 
+  // Date/heure/durée de la prestation affichées sur le devis/la facture.
+  // Pour un devis rattaché à une réservation, renseignées automatiquement
+  // depuis le créneau à la création ; pour un devis manuel, saisies par
+  // l'admin (§3.4 — pas de créneau à rattacher).
+  dateEvenement DateTime?
+  dureeMinutes  Int?
+  notes         String?   @db.Text
+
+  lignes  DevisLigne[]
   facture Facture?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/**
+ * Ligne de devis (produit + quantité + prix unitaire). `denomination` et
+ * `prixUnitaire` sont dupliqués depuis `Produit` au moment de l'ajout
+ * (snapshot) : si l'admin modifie le catalogue plus tard, les devis déjà
+ * émis ne doivent pas changer rétroactivement.
+ */
+model DevisLigne {
+  id      String @id @default(cuid())
+  devisId String
+  devis   Devis  @relation(fields: [devisId], references: [id], onDelete: Cascade)
+
+  produitId String?
+  produit   Produit? @relation(fields: [produitId], references: [id])
+
+  denomination String
+  quantite     Int     @default(1)
+  prixUnitaire Decimal @db.Decimal(10, 2)
+  montantLigne Decimal @db.Decimal(10, 2) // quantite * prixUnitaire
+  ordre        Int     @default(0)
+
+  @@index([devisId])
 }
 
 model Facture {
@@ -227,9 +286,30 @@ model Facture {
   noteLitige String?   @db.Text
   envoyeeLe  DateTime?
   pdfUrl     String?
+  notes      String?   @db.Text
+
+  lignes FactureLigne[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/** Ligne de facture — même principe de snapshot que DevisLigne. */
+model FactureLigne {
+  id        String  @id @default(cuid())
+  factureId String
+  facture   Facture @relation(fields: [factureId], references: [id], onDelete: Cascade)
+
+  produitId String?
+  produit   Produit? @relation(fields: [produitId], references: [id])
+
+  denomination String
+  quantite     Int     @default(1)
+  prixUnitaire Decimal @db.Decimal(10, 2)
+  montantLigne Decimal @db.Decimal(10, 2)
+  ordre        Int     @default(0)
+
+  @@index([factureId])
 }
 
 model Client {
@@ -265,7 +345,19 @@ model SiteSettings {
   siteName           String?
   headerImageUrl     String?
   backgroundImageUrl String?
-  updatedAt          DateTime @updatedAt
+
+  // Informations "expéditeur" affichées sur les devis/factures (identité de
+  // l'association émettrice) et conditions générales de vente — cahier des
+  // charges : facture entièrement remplie avec raison sociale, SIRET,
+  // contact du vendeur et CGV.
+  raisonSociale    String?
+  siret            String?
+  adresseSiege     String? @db.Text
+  emailContact     String?
+  telephoneContact String?
+  cgvTexte         String? @db.Text
+
+  updatedAt DateTime @updatedAt
 }
 
 model NumberingCounter {
