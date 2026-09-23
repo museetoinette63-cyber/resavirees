@@ -47,6 +47,19 @@ export const RESERVATION_STATUS_COLORS: Record<ReservationStatus, string> = {
   ANNULE: "bg-red-100 text-red-800",
 };
 
+/** Libellés/couleurs pour `StatutPaiement` (acompte/solde) — Devis/Facture. */
+export const STATUT_PAIEMENT_LABELS: Record<"EN_ATTENTE" | "RECU" | "EXPIRE", string> = {
+  EN_ATTENTE: "En attente",
+  RECU: "Reçu",
+  EXPIRE: "Expiré",
+};
+
+export const STATUT_PAIEMENT_COLORS: Record<"EN_ATTENTE" | "RECU" | "EXPIRE", string> = {
+  EN_ATTENTE: "bg-amber-100 text-amber-800",
+  RECU: "bg-emerald-100 text-emerald-800",
+  EXPIRE: "bg-red-100 text-red-800",
+};
+
 export const RESERVATION_STATUS_ORDER: ReservationStatus[] = [
   "DEMANDE_RECUE",
   "DEVIS_INTERNE_GENERE",
