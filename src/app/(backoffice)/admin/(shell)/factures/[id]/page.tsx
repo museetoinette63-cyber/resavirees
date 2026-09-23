@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatEuros } from "@/lib/formatMoney";
 import { STATUT_PAIEMENT_LABELS, STATUT_PAIEMENT_COLORS } from "@/lib/reservationStatusLabels";
+import { LignesReadOnlyTable } from "@/components/admin/LignesEditor";
 import FactureEditForm from "./facture-edit-form";
 
 export default async function FactureDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -13,6 +14,7 @@ export default async function FactureDetailPage({ params }: { params: Promise<{ 
     include: {
       client: true,
       devis: { include: { reservation: { include: { creneau: { include: { visite: true } } } } } },
+      lignes: { orderBy: { ordre: "asc" } },
     },
   });
 
@@ -21,6 +23,20 @@ export default async function FactureDetailPage({ params }: { params: Promise<{ 
   }
 
   const estRattachee = !!facture.devis.reservationId;
+
+  const produits = estRattachee
+    ? []
+    : await prisma.produit.findMany({
+        where: { actif: true },
+        orderBy: { nom: "asc" },
+        select: { id: true, nom: true, prixUnitaire: true, dureeMinutes: true },
+      });
+  const produitOptions = produits.map((p) => ({
+    id: p.id,
+    nom: p.nom,
+    prixUnitaire: p.prixUnitaire.toString(),
+    dureeMinutes: p.dureeMinutes,
+  }));
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -91,14 +107,36 @@ export default async function FactureDetailPage({ params }: { params: Promise<{ 
         </div>
       </div>
 
+      {estRattachee ? (
+        <div className="space-y-2">
+          <h2 className="text-sm font-semibold text-stone-900">Lignes</h2>
+          <LignesReadOnlyTable
+            lignes={facture.lignes.map((l) => ({
+              id: l.id,
+              denomination: l.denomination,
+              quantite: l.quantite,
+              prixUnitaire: l.prixUnitaire.toString(),
+              montantLigne: l.montantLigne.toString(),
+            }))}
+          />
+        </div>
+      ) : null}
+
       <FactureEditForm
         factureId={facture.id}
         nbAdultesReel={facture.nbAdultesReel}
         nbEnfantsReel={facture.nbEnfantsReel}
-        montantFinal={facture.montantFinal.toString()}
         soldeStatutPaiement={facture.soldeStatutPaiement}
         noteLitige={facture.noteLitige ?? ""}
+        notes={facture.notes ?? ""}
         estRattachee={estRattachee}
+        produits={produitOptions}
+        lignesInitiales={facture.lignes.map((l) => ({
+          produitId: l.produitId,
+          denomination: l.denomination,
+          quantite: String(l.quantite),
+          prixUnitaire: l.prixUnitaire.toString(),
+        }))}
       />
     </div>
   );

@@ -3,144 +3,128 @@
  * avec `@react-pdf/renderer` (choix documenté dans le plan d'architecture :
  * plus simple à maintenir que pdf-lib pour un nombre variable de lignes).
  *
+ * Document complet "facture-like" : expéditeur (association, depuis
+ * SiteSettings) / destinataire (client), détail de la prestation (date,
+ * heure, durée), tableau des lignes (DevisLigne), totaux + acompte, notes et
+ * CGV. Voir `pdfShared.tsx` pour les blocs/styles partagés avec
+ * `facturePdf.tsx` (seule la section "totaux" diffère entre les deux).
+ *
  * Important : l'association cliente n'est pas assujettie à la TVA — le taux
  * est donc toujours affiché à 0% (`devis.tauxTVA`, qui vaut 0 par défaut en
  * base, cf. schema.prisma).
  */
 
-import { Document, Page, View, Text, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
-import type { Prisma } from "@prisma/client";
+import { Document, Page, View, Text, renderToBuffer } from "@react-pdf/renderer";
+import type { Prisma, SiteSettings } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import {
+  sharedStyles,
+  formatEuros,
+  formatDateParis,
+  statutPaiementLabel,
+  ExpediteurBlock,
+  DestinataireBlock,
+  PrestationSection,
+  LignesTable,
+  NotesSection,
+  CgvSection,
+} from "./pdfShared";
 
 export type DevisWithRelations = Prisma.DevisGetPayload<{
-  include: { reservation: true; client: true };
+  include: {
+    reservation: { include: { creneau: { include: { visite: true } } } };
+    client: true;
+    lignes: true;
+  };
 }>;
 
-const styles = StyleSheet.create({
-  page: { padding: 36, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
-  header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
-  title: { fontSize: 18, fontFamily: "Helvetica-Bold" },
-  numero: { fontSize: 11, marginTop: 4 },
-  section: { marginBottom: 16 },
-  sectionTitle: { fontSize: 11, fontFamily: "Helvetica-Bold", marginBottom: 6 },
-  row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 3 },
-  label: { color: "#444" },
-  value: { fontFamily: "Helvetica-Bold" },
-  table: { borderTop: "1px solid #ccc", borderBottom: "1px solid #ccc", paddingVertical: 6, marginBottom: 8 },
-  totalRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
-  totalLabel: { fontSize: 12, fontFamily: "Helvetica-Bold" },
-  totalValue: { fontSize: 12, fontFamily: "Helvetica-Bold" },
-  footerNote: { marginTop: 24, fontSize: 8, color: "#666" },
-});
+function DevisDocument({
+  devis,
+  siteSettings,
+}: {
+  devis: DevisWithRelations;
+  siteSettings: SiteSettings | null;
+}) {
+  // Destinataire : compte client s'il est lié, sinon coordonnées capturées
+  // sur la réservation (un devis manuel peut n'avoir qu'un client, un devis
+  // issu d'une réservation peut n'avoir que la réservation).
+  const nom = devis.client?.nomOuRaisonSociale ?? devis.reservation?.nomOuRaisonSociale ?? "-";
+  const adresse = devis.client?.adressePostale ?? devis.reservation?.adressePostale ?? null;
+  const email = devis.client?.email ?? devis.reservation?.email ?? null;
+  const telephone = devis.client?.telephone ?? devis.reservation?.telephone ?? null;
 
-function formatEuros(value: Prisma.Decimal | number | null | undefined): string {
-  if (value === null || value === undefined) return "-";
-  const num = typeof value === "number" ? value : value.toNumber();
-  return num.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
-}
+  // Date/heure/durée de la prestation : champs propres au devis s'ils sont
+  // renseignés (devis manuel, ou copiés depuis le créneau à la création pour
+  // un devis issu d'une réservation), sinon repli sur le créneau lié.
+  const datePrestation = devis.dateEvenement ?? devis.reservation?.creneau.dateHeure ?? null;
+  const dureeMinutes = devis.dureeMinutes ?? null;
 
-function formatDate(date: Date | null | undefined): string {
-  if (!date) return "-";
-  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
-}
+  const lignesTriees = [...devis.lignes].sort((a, b) => a.ordre - b.ordre);
 
-function forfaitLabel(niveau: DevisWithRelations["forfaitApplique"]): string {
-  if (niveau === "NIVEAU_1") return "Forfait niveau 1";
-  if (niveau === "NIVEAU_2") return "Forfait niveau 2";
-  return "Aucun";
-}
-
-function DevisDocument({ devis }: { devis: DevisWithRelations }) {
-  const nom = devis.reservation?.nomOuRaisonSociale ?? devis.client?.nomOuRaisonSociale ?? "-";
-  const adresse = devis.reservation?.adressePostale ?? devis.client?.adressePostale ?? "-";
-  const email = devis.reservation?.email ?? devis.client?.email ?? "-";
-  const telephone = devis.reservation?.telephone ?? devis.client?.telephone ?? "-";
+  // Date d'émission : date d'envoi si le devis a déjà été envoyé, sinon date de création.
+  const dateEmission = devis.envoyeLe ?? devis.createdAt;
 
   return (
     <Document title={`Devis ${devis.numero}`}>
-      <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
+      <Page size="A4" style={sharedStyles.page}>
+        <View style={sharedStyles.headerRow}>
           <View>
-            <Text style={styles.title}>Devis</Text>
-            <Text style={styles.numero}>{devis.numero}</Text>
+            <Text style={sharedStyles.docTitle}>DEVIS</Text>
+            <Text style={sharedStyles.docNumero}>{devis.numero}</Text>
           </View>
           <View>
-            <Text style={styles.label}>Date</Text>
-            <Text style={styles.value}>{formatDate(devis.createdAt)}</Text>
+            <Text style={sharedStyles.docDate}>{`Date d'émission : ${formatDateParis(dateEmission)}`}</Text>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Client</Text>
-          <Text>{nom}</Text>
-          <Text>{adresse}</Text>
-          <Text>{email}</Text>
-          <Text>{telephone}</Text>
+        <View style={sharedStyles.partiesRow}>
+          <ExpediteurBlock
+            info={{
+              raisonSociale: siteSettings?.raisonSociale ?? null,
+              siteName: siteSettings?.siteName ?? null,
+              adresseSiege: siteSettings?.adresseSiege ?? null,
+              siret: siteSettings?.siret ?? null,
+              emailContact: siteSettings?.emailContact ?? null,
+              telephoneContact: siteSettings?.telephoneContact ?? null,
+            }}
+          />
+          <DestinataireBlock info={{ nom, adresse, email, telephone }} />
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Détail du calcul</Text>
-          <View style={styles.table}>
-            <View style={styles.row}>
-              <Text style={styles.label}>Adultes</Text>
-              <Text style={styles.value}>
-                {devis.nbAdultes} x {formatEuros(devis.tarifAdulteApplique)}
-              </Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Enfants</Text>
-              <Text style={styles.value}>
-                {devis.nbEnfants} x {formatEuros(devis.tarifEnfantApplique)}
-              </Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Coût individuel total</Text>
-              <Text style={styles.value}>{formatEuros(devis.coutIndividuelTotal)}</Text>
-            </View>
-            {devis.forfaitApplique && (
-              <View style={styles.row}>
-                <Text style={styles.label}>{forfaitLabel(devis.forfaitApplique)}</Text>
-                <Text style={styles.value}>{formatEuros(devis.montantForfait)}</Text>
-              </View>
-            )}
-            <View style={styles.row}>
-              <Text style={styles.label}>Montant avant majoration</Text>
-              <Text style={styles.value}>{formatEuros(devis.montantAvantMajoration)}</Text>
-            </View>
-            {devis.majorationTardiveAppliquee && (
-              <View style={styles.row}>
-                <Text style={styles.label}>Majoration tardive</Text>
-                <Text style={styles.value}>{formatEuros(devis.montantMajoration)}</Text>
-              </View>
-            )}
-          </View>
+        <PrestationSection info={{ date: datePrestation, dureeMinutes }} />
 
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Montant total</Text>
-            <Text style={styles.totalValue}>{formatEuros(devis.montantTotal)}</Text>
+        <LignesTable lignes={lignesTriees} />
+
+        <View style={sharedStyles.totalsBox}>
+          <View style={sharedStyles.totalsRow}>
+            <Text style={sharedStyles.totalsLabel}>TVA</Text>
+            <Text style={sharedStyles.totalsValue}>0 % (association non assujettie)</Text>
           </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Taux de TVA</Text>
-            <Text style={styles.value}>{devis.tauxTVA.toString()}% (association non assujettie)</Text>
+          <View style={sharedStyles.grandTotalRow}>
+            <Text style={sharedStyles.grandTotalLabel}>Montant total</Text>
+            <Text style={sharedStyles.grandTotalValue}>{formatEuros(devis.montantTotal)}</Text>
+          </View>
+          <View style={sharedStyles.totalsRow}>
+            <Text style={sharedStyles.totalsLabel}>{`Acompte (${devis.acomptePourcentage.toString()} %)`}</Text>
+            <Text style={sharedStyles.totalsValue}>{formatEuros(devis.acompteMontant)}</Text>
+          </View>
+          <View style={sharedStyles.totalsRow}>
+            <Text style={sharedStyles.totalsLabel}>{"Statut de l'acompte"}</Text>
+            <Text style={sharedStyles.totalsValue}>
+              {statutPaiementLabel(
+                devis.acompteStatutPaiement,
+                devis.acompteDateLimite,
+                devis.acompteDateReglement
+              )}
+            </Text>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Acompte</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Pourcentage</Text>
-            <Text style={styles.value}>{devis.acomptePourcentage.toString()}%</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Montant</Text>
-            <Text style={styles.value}>{formatEuros(devis.acompteMontant)}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Date limite de règlement</Text>
-            <Text style={styles.value}>{formatDate(devis.acompteDateLimite)}</Text>
-          </View>
-        </View>
+        <NotesSection notes={devis.notes} />
 
-        <Text style={styles.footerNote}>
+        <CgvSection cgvTexte={siteSettings?.cgvTexte} />
+
+        <Text style={sharedStyles.footerNote}>
           TVA non applicable, art. 293 B du CGI — association non assujettie à la TVA.
         </Text>
       </Page>
@@ -150,5 +134,6 @@ function DevisDocument({ devis }: { devis: DevisWithRelations }) {
 
 /** Rend le PDF du devis dans un Buffer, prêt à être écrit sur disque ou attaché à un e-mail. */
 export async function renderDevisPdf(devis: DevisWithRelations): Promise<Buffer> {
-  return renderToBuffer(<DevisDocument devis={devis} />);
+  const siteSettings = await prisma.siteSettings.findUnique({ where: { id: 1 } });
+  return renderToBuffer(<DevisDocument devis={devis} siteSettings={siteSettings} />);
 }

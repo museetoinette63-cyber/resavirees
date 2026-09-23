@@ -7,6 +7,16 @@ const settingsSchema = z.object({
   siteName: z.string().min(1).optional().nullable(),
   headerImageUrl: z.string().min(1).optional().nullable(),
   backgroundImageUrl: z.string().min(1).optional().nullable(),
+  // Identité légale "expéditeur" + CGV affichées sur les devis/factures PDF
+  // (voir prisma/schema.prisma SiteSettings). Pas de contrainte de format
+  // stricte sur le SIRET : ce formulaire n'a pas à valider la structure
+  // officielle, seulement à stocker ce que l'admin renseigne.
+  raisonSociale: z.string().min(1).optional().nullable(),
+  siret: z.string().min(1).optional().nullable(),
+  adresseSiege: z.string().min(1).optional().nullable(),
+  emailContact: z.string().email("Adresse email invalide.").optional().nullable(),
+  telephoneContact: z.string().min(1).optional().nullable(),
+  cgvTexte: z.string().min(1).optional().nullable(),
 });
 
 export async function GET() {

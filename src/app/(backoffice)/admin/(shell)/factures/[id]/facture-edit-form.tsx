@@ -2,30 +2,42 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import LignesEditor, {
+  nouvelleLigneVide,
+  type LigneItem,
+  type ProduitOption,
+} from "@/components/admin/LignesEditor";
 
 interface FactureEditFormProps {
   factureId: string;
   nbAdultesReel: number;
   nbEnfantsReel: number;
-  montantFinal: string;
   soldeStatutPaiement: "EN_ATTENTE" | "RECU" | "EXPIRE";
   noteLitige: string;
+  notes: string;
   estRattachee: boolean;
+  produits: ProduitOption[];
+  lignesInitiales: LigneItem[];
 }
 
 export default function FactureEditForm({
   factureId,
   nbAdultesReel: initAdultes,
   nbEnfantsReel: initEnfants,
-  montantFinal: initMontant,
   soldeStatutPaiement: initStatut,
   noteLitige: initNote,
+  notes: initNotes,
   estRattachee,
+  produits,
+  lignesInitiales,
 }: FactureEditFormProps) {
   const router = useRouter();
   const [nbAdultesReel, setNbAdultesReel] = useState(String(initAdultes));
   const [nbEnfantsReel, setNbEnfantsReel] = useState(String(initEnfants));
-  const [montantFinal, setMontantFinal] = useState(initMontant);
+  const [lignes, setLignes] = useState<LigneItem[]>(
+    lignesInitiales.length > 0 ? lignesInitiales : [nouvelleLigneVide()]
+  );
+  const [notes, setNotes] = useState(initNotes);
   const [reference, setReference] = useState("");
   const [noteLitige, setNoteLitige] = useState(initNote);
   const [error, setError] = useState<string | null>(null);
@@ -60,9 +72,9 @@ export default function FactureEditForm({
 
       {!estRattachee ? (
         <>
-          <div className="space-y-3 rounded-lg border border-stone-200 bg-white p-5">
+          <div className="space-y-4 rounded-lg border border-stone-200 bg-white p-5">
             <h2 className="text-sm font-semibold text-stone-900">Modifier la facture</h2>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-stone-600">Adultes réel</label>
                 <input
@@ -83,18 +95,24 @@ export default function FactureEditForm({
                   className="w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-stone-600">Montant (€)</label>
-                <input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={montantFinal}
-                  onChange={(e) => setMontantFinal(e.target.value)}
-                  className="w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
-                />
-              </div>
             </div>
+
+            <div className="space-y-2">
+              <span className="text-sm font-medium text-stone-700">Lignes</span>
+              <LignesEditor produits={produits} lignes={lignes} onChange={setLignes} />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-stone-600">Notes</label>
+              <textarea
+                rows={3}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Note libre affichée sur la facture (optionnel)."
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
+              />
+            </div>
+
             <button
               type="button"
               disabled={busy}
@@ -102,7 +120,13 @@ export default function FactureEditForm({
                 patch({
                   nbAdultesReel: Number(nbAdultesReel),
                   nbEnfantsReel: Number(nbEnfantsReel),
-                  montantFinal: Number(montantFinal),
+                  lignes: lignes.map((l) => ({
+                    produitId: l.produitId,
+                    denomination: l.denomination,
+                    quantite: Number(l.quantite),
+                    prixUnitaire: Number(l.prixUnitaire),
+                  })),
+                  notes: notes || null,
                 })
               }
               className="rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-60"

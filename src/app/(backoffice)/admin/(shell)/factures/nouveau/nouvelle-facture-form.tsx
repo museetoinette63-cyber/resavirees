@@ -2,34 +2,45 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import LignesEditor, {
+  nouvelleLigneVide,
+  type LigneItem,
+  type ProduitOption,
+} from "@/components/admin/LignesEditor";
 
 interface DevisOption {
   id: string;
   label: string;
-  montantTotal: string;
   nbAdultes: number;
   nbEnfants: number;
+  lignes: LigneItem[];
 }
 
-export default function NouvelleFactureForm({ devisOptions }: { devisOptions: DevisOption[] }) {
+export default function NouvelleFactureForm({
+  devisOptions,
+  produits,
+}: {
+  devisOptions: DevisOption[];
+  produits: ProduitOption[];
+}) {
   const router = useRouter();
   const [devisId, setDevisId] = useState(devisOptions[0]?.id ?? "");
-  const selected = useMemo(
-    () => devisOptions.find((d) => d.id === devisId),
-    [devisOptions, devisId]
-  );
-  const [montantFinal, setMontantFinal] = useState(selected?.montantTotal ?? "");
+  const selected = useMemo(() => devisOptions.find((d) => d.id === devisId), [devisOptions, devisId]);
   const [nbAdultesReel, setNbAdultesReel] = useState(String(selected?.nbAdultes ?? 0));
   const [nbEnfantsReel, setNbEnfantsReel] = useState(String(selected?.nbEnfants ?? 0));
+  const [lignes, setLignes] = useState<LigneItem[]>(
+    selected && selected.lignes.length > 0 ? selected.lignes : [nouvelleLigneVide()]
+  );
+  const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   function handleSelectDevis(id: string) {
     setDevisId(id);
     const d = devisOptions.find((o) => o.id === id);
-    setMontantFinal(d?.montantTotal ?? "");
     setNbAdultesReel(String(d?.nbAdultes ?? 0));
     setNbEnfantsReel(String(d?.nbEnfants ?? 0));
+    setLignes(d && d.lignes.length > 0 ? d.lignes : [nouvelleLigneVide()]);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -48,9 +59,15 @@ export default function NouvelleFactureForm({ devisOptions }: { devisOptions: De
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           devisId,
-          montantFinal: Number(montantFinal),
           nbAdultesReel: Number(nbAdultesReel),
           nbEnfantsReel: Number(nbEnfantsReel),
+          lignes: lignes.map((l) => ({
+            produitId: l.produitId,
+            denomination: l.denomination,
+            quantite: Number(l.quantite),
+            prixUnitaire: Number(l.prixUnitaire),
+          })),
+          notes: notes || null,
         }),
       });
 
@@ -73,7 +90,7 @@ export default function NouvelleFactureForm({ devisOptions }: { devisOptions: De
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-lg border border-stone-200 bg-white p-6 shadow-sm"
+      className="space-y-5 rounded-lg border border-stone-200 bg-white p-6 shadow-sm"
     >
       {error ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
 
@@ -124,14 +141,21 @@ export default function NouvelleFactureForm({ devisOptions }: { devisOptions: De
         </div>
       </div>
 
+      <div className="space-y-2">
+        <span className="text-sm font-medium text-stone-700">Lignes</span>
+        <LignesEditor produits={produits} lignes={lignes} onChange={setLignes} />
+      </div>
+
       <div className="space-y-1">
-        <label className="text-sm font-medium text-stone-700">Montant final (€)</label>
-        <input
-          type="number"
-          min={0}
-          step="0.01"
-          value={montantFinal}
-          onChange={(e) => setMontantFinal(e.target.value)}
+        <label htmlFor="notes" className="text-sm font-medium text-stone-700">
+          Notes
+        </label>
+        <textarea
+          id="notes"
+          rows={3}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Note libre affichée sur la facture (optionnel)."
           className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
         />
       </div>

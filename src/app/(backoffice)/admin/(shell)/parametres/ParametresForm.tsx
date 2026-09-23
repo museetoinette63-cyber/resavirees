@@ -7,6 +7,12 @@ export type SiteSettingsInitial = {
   siteName: string | null;
   headerImageUrl: string | null;
   backgroundImageUrl: string | null;
+  raisonSociale: string | null;
+  siret: string | null;
+  adresseSiege: string | null;
+  emailContact: string | null;
+  telephoneContact: string | null;
+  cgvTexte: string | null;
 };
 
 async function uploadImage(file: File): Promise<string> {
@@ -25,6 +31,13 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
   const [siteName, setSiteName] = useState(initial.siteName ?? "");
   const [headerImageUrl, setHeaderImageUrl] = useState(initial.headerImageUrl ?? "");
   const [backgroundImageUrl, setBackgroundImageUrl] = useState(initial.backgroundImageUrl ?? "");
+
+  const [raisonSociale, setRaisonSociale] = useState(initial.raisonSociale ?? "");
+  const [siret, setSiret] = useState(initial.siret ?? "");
+  const [adresseSiege, setAdresseSiege] = useState(initial.adresseSiege ?? "");
+  const [emailContact, setEmailContact] = useState(initial.emailContact ?? "");
+  const [telephoneContact, setTelephoneContact] = useState(initial.telephoneContact ?? "");
+  const [cgvTexte, setCgvTexte] = useState(initial.cgvTexte ?? "");
 
   const [uploadingHeader, setUploadingHeader] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
@@ -73,6 +86,12 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
           siteName: siteName || null,
           headerImageUrl: headerImageUrl || null,
           backgroundImageUrl: backgroundImageUrl || null,
+          raisonSociale: raisonSociale || null,
+          siret: siret || null,
+          adresseSiege: adresseSiege || null,
+          emailContact: emailContact || null,
+          telephoneContact: telephoneContact || null,
+          cgvTexte: cgvTexte || null,
         }),
       });
       const body = await res.json();
@@ -149,6 +168,92 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
             // eslint-disable-next-line @next/next/no-img-element
             <img src={backgroundImageUrl} alt="Aperçu fond" className="mt-2 h-24 rounded-md object-cover" />
           ) : null}
+        </div>
+      </section>
+
+      <section className="space-y-4 rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
+        <div>
+          <h2 className="text-sm font-semibold text-stone-900">
+            Identité légale (expéditeur des devis/factures)
+          </h2>
+          <p className="mt-1 text-xs text-stone-500">
+            Ces informations apparaissent comme émetteur sur chaque devis et facture PDF.
+          </p>
+        </div>
+
+        <div className="space-y-1">
+          <label className={labelClass} htmlFor="raisonSociale">Raison sociale</label>
+          <input
+            id="raisonSociale"
+            className={inputClass}
+            value={raisonSociale}
+            onChange={(e) => setRaisonSociale(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className={labelClass} htmlFor="siret">SIRET</label>
+          <input
+            id="siret"
+            className={inputClass}
+            value={siret}
+            onChange={(e) => setSiret(e.target.value)}
+            placeholder="14 chiffres"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className={labelClass} htmlFor="adresseSiege">Adresse du siège</label>
+          <textarea
+            id="adresseSiege"
+            className={inputClass}
+            rows={3}
+            value={adresseSiege}
+            onChange={(e) => setAdresseSiege(e.target.value)}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className={labelClass} htmlFor="emailContact">Email de contact</label>
+            <input
+              id="emailContact"
+              type="email"
+              className={inputClass}
+              value={emailContact}
+              onChange={(e) => setEmailContact(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <label className={labelClass} htmlFor="telephoneContact">Téléphone de contact</label>
+            <input
+              id="telephoneContact"
+              type="tel"
+              className={inputClass}
+              value={telephoneContact}
+              onChange={(e) => setTelephoneContact(e.target.value)}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4 rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
+        <div>
+          <h2 className="text-sm font-semibold text-stone-900">Conditions générales de vente</h2>
+          <p className="mt-1 text-xs text-stone-500">
+            Texte brut : les sauts de ligne sont conservés et mis en forme automatiquement sur le PDF.
+          </p>
+        </div>
+
+        <div className="space-y-1">
+          <label className={labelClass} htmlFor="cgvTexte">Texte des CGV</label>
+          <textarea
+            id="cgvTexte"
+            className={`${inputClass} font-mono`}
+            rows={10}
+            value={cgvTexte}
+            onChange={(e) => setCgvTexte(e.target.value)}
+          />
         </div>
       </section>
 

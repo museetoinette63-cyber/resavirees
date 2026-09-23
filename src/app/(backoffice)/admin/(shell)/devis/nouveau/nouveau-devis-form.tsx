@@ -2,6 +2,11 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import LignesEditor, {
+  nouvelleLigneVide,
+  type LigneItem,
+  type ProduitOption,
+} from "@/components/admin/LignesEditor";
 
 interface ClientOption {
   id: string;
@@ -9,12 +14,29 @@ interface ClientOption {
   email: string;
 }
 
-export default function NouveauDevisForm({ clients }: { clients: ClientOption[] }) {
+/** Combine une date (yyyy-mm-dd) et une heure (HH:mm) en ISO string, ou null si l'un des deux manque. */
+function toIsoOrNull(date: string, heure: string): string | null {
+  if (!date) return null;
+  const iso = new Date(`${date}T${heure || "00:00"}`);
+  return Number.isNaN(iso.getTime()) ? null : iso.toISOString();
+}
+
+export default function NouveauDevisForm({
+  clients,
+  produits,
+}: {
+  clients: ClientOption[];
+  produits: ProduitOption[];
+}) {
   const router = useRouter();
   const [clientId, setClientId] = useState(clients[0]?.id ?? "");
   const [nbAdultes, setNbAdultes] = useState("1");
   const [nbEnfants, setNbEnfants] = useState("0");
-  const [montantTotal, setMontantTotal] = useState("");
+  const [lignes, setLignes] = useState<LigneItem[]>([nouvelleLigneVide()]);
+  const [date, setDate] = useState("");
+  const [heure, setHeure] = useState("");
+  const [dureeMinutes, setDureeMinutes] = useState("");
+  const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -36,7 +58,15 @@ export default function NouveauDevisForm({ clients }: { clients: ClientOption[] 
           clientId,
           nbAdultes: Number(nbAdultes),
           nbEnfants: Number(nbEnfants),
-          montantTotal: Number(montantTotal),
+          lignes: lignes.map((l) => ({
+            produitId: l.produitId,
+            denomination: l.denomination,
+            quantite: Number(l.quantite),
+            prixUnitaire: Number(l.prixUnitaire),
+          })),
+          dateEvenement: toIsoOrNull(date, heure),
+          dureeMinutes: dureeMinutes ? Number(dureeMinutes) : null,
+          notes: notes || null,
         }),
       });
 
@@ -59,7 +89,7 @@ export default function NouveauDevisForm({ clients }: { clients: ClientOption[] 
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-lg border border-stone-200 bg-white p-6 shadow-sm"
+      className="space-y-5 rounded-lg border border-stone-200 bg-white p-6 shadow-sm"
     >
       {error ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
 
@@ -116,18 +146,61 @@ export default function NouveauDevisForm({ clients }: { clients: ClientOption[] 
         </div>
       </div>
 
+      <div className="grid grid-cols-3 gap-4">
+        <div className="space-y-1">
+          <label htmlFor="date" className="text-sm font-medium text-stone-700">
+            Date de la prestation
+          </label>
+          <input
+            id="date"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+          />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="heure" className="text-sm font-medium text-stone-700">
+            Heure
+          </label>
+          <input
+            id="heure"
+            type="time"
+            value={heure}
+            onChange={(e) => setHeure(e.target.value)}
+            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+          />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="dureeMinutes" className="text-sm font-medium text-stone-700">
+            Durée (min)
+          </label>
+          <input
+            id="dureeMinutes"
+            type="number"
+            min={0}
+            value={dureeMinutes}
+            onChange={(e) => setDureeMinutes(e.target.value)}
+            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <span className="text-sm font-medium text-stone-700">Lignes</span>
+        <LignesEditor produits={produits} lignes={lignes} onChange={setLignes} />
+      </div>
+
       <div className="space-y-1">
-        <label htmlFor="montantTotal" className="text-sm font-medium text-stone-700">
-          Montant total (€)
+        <label htmlFor="notes" className="text-sm font-medium text-stone-700">
+          Notes
         </label>
-        <input
-          id="montantTotal"
-          type="number"
-          min={0}
-          step="0.01"
-          required
-          value={montantTotal}
-          onChange={(e) => setMontantTotal(e.target.value)}
+        <textarea
+          id="notes"
+          rows={3}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Note libre affichée sur le devis (optionnel)."
           className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
         />
       </div>

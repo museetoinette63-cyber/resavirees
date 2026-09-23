@@ -1,6 +1,69 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import type { PrismaTransactionClient } from "@/lib/reservationWorkflow/transitions";
+
+interface LigneInput {
+  produitId?: string | null;
+  denomination?: string;
+  quantite?: number;
+  prixUnitaire?: number;
+}
+
+/** Même validation que POST /api/admin/factures — voir ce fichier pour le détail des règles. */
+function validateLignes(
+  lignes: unknown
+):
+  | {
+      ok: true;
+      lignes: {
+        produitId: string | null;
+        denomination: string;
+        quantite: number;
+        prixUnitaire: number;
+        ordre: number;
+      }[];
+    }
+  | { ok: false; error: string } {
+  if (!Array.isArray(lignes) || lignes.length === 0) {
+    return { ok: false, error: "Au moins une ligne est requise." };
+  }
+
+  const parsed: {
+    produitId: string | null;
+    denomination: string;
+    quantite: number;
+    prixUnitaire: number;
+    ordre: number;
+  }[] = [];
+
+  for (let i = 0; i < lignes.length; i++) {
+    const l = lignes[i] as LigneInput;
+    const denomination = typeof l?.denomination === "string" ? l.denomination.trim() : "";
+    const quantite = Number(l?.quantite);
+    const prixUnitaire = Number(l?.prixUnitaire);
+
+    if (!denomination) {
+      return { ok: false, error: `Ligne ${i + 1} : la dénomination est requise.` };
+    }
+    if (!Number.isFinite(quantite) || !Number.isInteger(quantite) || quantite <= 0) {
+      return { ok: false, error: `Ligne ${i + 1} : la quantité doit être un entier positif.` };
+    }
+    if (!Number.isFinite(prixUnitaire) || prixUnitaire < 0) {
+      return { ok: false, error: `Ligne ${i + 1} : le prix unitaire doit être un nombre positif.` };
+    }
+
+    parsed.push({
+      produitId: typeof l?.produitId === "string" && l.produitId ? l.produitId : null,
+      denomination,
+      quantite,
+      prixUnitaire,
+      ordre: i,
+    });
+  }
+
+  return { ok: true, lignes: parsed };
+}
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -14,6 +77,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     include: {
       client: true,
       devis: { include: { reservation: { include: { creneau: { include: { visite: true } } } } } },
+      lignes: { orderBy: { ordre: "asc" } },
     },
   });
 
@@ -48,6 +112,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         nbAdultesReel?: number;
         nbEnfantsReel?: number;
         montantFinal?: number;
+        lignes?: LigneInput[];
+        notes?: string | null;
         soldeStatutPaiement?: "EN_ATTENTE" | "RECU" | "EXPIRE";
         soldeDateReglement?: string | null;
         soldeReferenceReglement?: string | null;
@@ -62,12 +128,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (body?.noteLitige !== undefined) {
     data.noteLitige = body.noteLitige;
   }
+  if (body?.notes !== undefined) {
+    data.notes = body.notes || null;
+  }
+
+  let lignesResult: ReturnType<typeof validateLignes> | null = null;
 
   if (
     !estRattacheeAUneReservation &&
     (body?.nbAdultesReel !== undefined ||
       body?.nbEnfantsReel !== undefined ||
       body?.montantFinal !== undefined ||
+      body?.lignes !== undefined ||
       body?.soldeStatutPaiement !== undefined)
   ) {
     if (body?.nbAdultesReel !== undefined) {
@@ -84,7 +156,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }
       data.nbEnfantsReel = v;
     }
-    if (body?.montantFinal !== undefined) {
+    if (body?.lignes !== undefined) {
+      lignesResult = validateLignes(body.lignes);
+      if (!lignesResult.ok) {
+        return NextResponse.json({ error: lignesResult.error }, { status: 400 });
+      }
+      const montantFinal = lignesResult.lignes.reduce((sum, l) => sum + l.quantite * l.prixUnitaire, 0);
+      data.montantFinal = montantFinal;
+      data.ajuste = true;
+      data.ajusteLe = new Date();
+      data.ajustePar = session.user.email;
+    } else if (body?.montantFinal !== undefined) {
       const v = Number(body.montantFinal);
       if (!Number.isFinite(v) || v < 0) {
         return NextResponse.json({ error: "montantFinal invalide." }, { status: 400 });
@@ -106,6 +188,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     (body?.nbAdultesReel !== undefined ||
       body?.nbEnfantsReel !== undefined ||
       body?.montantFinal !== undefined ||
+      body?.lignes !== undefined ||
       body?.soldeStatutPaiement !== undefined)
   ) {
     return NextResponse.json(
@@ -117,6 +200,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     );
   }
 
-  const updated = await prisma.facture.update({ where: { id }, data });
+  const updated = await prisma.$transaction(async (tx: PrismaTransactionClient) => {
+    if (lignesResult && lignesResult.ok) {
+      await tx.factureLigne.deleteMany({ where: { factureId: id } });
+      await tx.factureLigne.createMany({
+        data: lignesResult.lignes.map((l) => ({
+          factureId: id,
+          produitId: l.produitId,
+          denomination: l.denomination,
+          quantite: l.quantite,
+          prixUnitaire: l.prixUnitaire,
+          montantLigne: l.quantite * l.prixUnitaire,
+          ordre: l.ordre,
+        })),
+      });
+    }
+    return tx.facture.update({ where: { id }, data, include: { lignes: { orderBy: { ordre: "asc" } } } });
+  });
+
   return NextResponse.json({ facture: updated });
 }

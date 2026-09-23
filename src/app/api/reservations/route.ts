@@ -154,6 +154,22 @@ export async function POST(request: NextRequest) {
 
       const numero = await generateNumero("DEVIS", tx);
 
+      // Ligne de devis unique représentant la visite réservée. Le moteur de
+      // tarification (forfaits de groupe, majoration tardive...) ne produit
+      // qu'un montant total, pas un prix par personne cohérent avec ce
+      // total — on dérive donc ici un `prixUnitaire` "moyen" (montantTotal /
+      // nb de personnes) uniquement pour que la ligne s'affiche de façon
+      // lisible sur le PDF ; `montantLigne` reste le vrai montant total du
+      // devis, donc la ligne (et par construction le devis) reste toujours
+      // exacte même si ce prix unitaire est une simplification arithmétique.
+      const quantiteLigne = data.nbAdultes + data.nbEnfants; // >= 1, garanti par reservationSchema
+      const montantTotalDecimal = fromCents(pricing.montantTotal);
+      const prixUnitaireLigne = montantTotalDecimal.dividedBy(quantiteLigne);
+
+      const produitCorrespondant = await tx.produit.findFirst({
+        where: { visiteId: visite.id, actif: true },
+      });
+
       await tx.devis.create({
         data: {
           numero,
@@ -170,11 +186,23 @@ export async function POST(request: NextRequest) {
           montantAvantMajoration: fromCents(pricing.montantAvantMajoration),
           majorationTardiveAppliquee: pricing.majorationTardiveAppliquee,
           montantMajoration: fromCents(pricing.montantMajoration),
-          montantTotal: fromCents(pricing.montantTotal),
+          montantTotal: montantTotalDecimal,
           tauxTVA: 0,
           acomptePourcentage: visite.acomptePourcentage,
           acompteMontant: fromCents(acompteMontantCents),
           acompteDelaiJours: visite.acompteDelaiJours,
+          dateEvenement: creneau.dateHeure,
+          dureeMinutes: produitCorrespondant?.dureeMinutes ?? null,
+          lignes: {
+            create: {
+              produitId: produitCorrespondant?.id ?? null,
+              denomination: visite.nom,
+              quantite: quantiteLigne,
+              prixUnitaire: prixUnitaireLigne,
+              montantLigne: montantTotalDecimal,
+              ordre: 0,
+            },
+          },
         },
       });
 

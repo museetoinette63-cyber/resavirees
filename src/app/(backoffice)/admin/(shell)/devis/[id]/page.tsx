@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatEuros } from "@/lib/formatMoney";
 import { STATUT_PAIEMENT_LABELS, STATUT_PAIEMENT_COLORS } from "@/lib/reservationStatusLabels";
+import { LignesReadOnlyTable } from "@/components/admin/LignesEditor";
 import DevisEditForm from "./devis-edit-form";
 
 export default async function DevisDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,6 +15,7 @@ export default async function DevisDetailPage({ params }: { params: Promise<{ id
       client: true,
       reservation: { include: { creneau: { include: { visite: true } } } },
       facture: true,
+      lignes: { orderBy: { ordre: "asc" } },
     },
   });
 
@@ -22,6 +24,20 @@ export default async function DevisDetailPage({ params }: { params: Promise<{ id
   }
 
   const estRattache = !!devis.reservationId;
+
+  const produits = estRattache
+    ? []
+    : await prisma.produit.findMany({
+        where: { actif: true },
+        orderBy: { nom: "asc" },
+        select: { id: true, nom: true, prixUnitaire: true, dureeMinutes: true },
+      });
+  const produitOptions = produits.map((p) => ({
+    id: p.id,
+    nom: p.nom,
+    prixUnitaire: p.prixUnitaire.toString(),
+    dureeMinutes: p.dureeMinutes,
+  }));
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -93,14 +109,38 @@ export default async function DevisDetailPage({ params }: { params: Promise<{ id
         </div>
       </div>
 
+      {estRattache ? (
+        <div className="space-y-2">
+          <h2 className="text-sm font-semibold text-stone-900">Lignes</h2>
+          <LignesReadOnlyTable
+            lignes={devis.lignes.map((l) => ({
+              id: l.id,
+              denomination: l.denomination,
+              quantite: l.quantite,
+              prixUnitaire: l.prixUnitaire.toString(),
+              montantLigne: l.montantLigne.toString(),
+            }))}
+          />
+        </div>
+      ) : null}
+
       {!estRattache ? (
         <DevisEditForm
           devisId={devis.id}
           nbAdultes={devis.nbAdultes}
           nbEnfants={devis.nbEnfants}
-          montantTotal={devis.montantTotal.toString()}
           acompteStatutPaiement={devis.acompteStatutPaiement}
           hasFacture={!!devis.facture}
+          produits={produitOptions}
+          lignesInitiales={devis.lignes.map((l) => ({
+            produitId: l.produitId,
+            denomination: l.denomination,
+            quantite: String(l.quantite),
+            prixUnitaire: l.prixUnitaire.toString(),
+          }))}
+          dateEvenement={devis.dateEvenement ? devis.dateEvenement.toISOString() : null}
+          dureeMinutes={devis.dureeMinutes}
+          notes={devis.notes ?? ""}
         />
       ) : null}
     </div>

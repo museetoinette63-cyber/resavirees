@@ -1,116 +1,135 @@
 /**
  * Génération PDF de la facture — cahier des charges §6. Voir `devisPdf.tsx`
- * pour le contexte général (mise en page déclarative, TVA à 0%).
+ * et `pdfShared.tsx` pour le contexte général (mise en page partagée,
+ * TVA à 0%). Seule la section "totaux" diffère : une facture affiche le
+ * solde (statut RECU/EN_ATTENTE/EXPIRE) au lieu de l'acompte, plus les
+ * mentions d'ajustement et de litige propres à ce document.
  */
 
-import { Document, Page, View, Text, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
-import type { Prisma } from "@prisma/client";
+import { Document, Page, View, Text, renderToBuffer } from "@react-pdf/renderer";
+import type { Prisma, SiteSettings } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import {
+  sharedStyles,
+  formatEuros,
+  formatDateParis,
+  statutPaiementLabel,
+  ExpediteurBlock,
+  DestinataireBlock,
+  PrestationSection,
+  LignesTable,
+  NotesSection,
+  CgvSection,
+} from "./pdfShared";
 
 export type FactureWithRelations = Prisma.FactureGetPayload<{
   include: {
-    devis: { include: { reservation: true; client: true } };
+    devis: {
+      include: { reservation: { include: { creneau: { include: { visite: true } } } }; client: true };
+    };
     client: true;
+    lignes: true;
   };
 }>;
 
-const styles = StyleSheet.create({
-  page: { padding: 36, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
-  header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
-  title: { fontSize: 18, fontFamily: "Helvetica-Bold" },
-  numero: { fontSize: 11, marginTop: 4 },
-  section: { marginBottom: 16 },
-  sectionTitle: { fontSize: 11, fontFamily: "Helvetica-Bold", marginBottom: 6 },
-  row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 3 },
-  label: { color: "#444" },
-  value: { fontFamily: "Helvetica-Bold" },
-  totalRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
-  totalLabel: { fontSize: 12, fontFamily: "Helvetica-Bold" },
-  totalValue: { fontSize: 12, fontFamily: "Helvetica-Bold" },
-  litigeBox: {
-    marginTop: 16,
-    padding: 8,
-    border: "1px solid #c0392b",
-    backgroundColor: "#fdf0ef",
-  },
-  litigeTitle: { fontFamily: "Helvetica-Bold", color: "#c0392b", marginBottom: 4 },
-  footerNote: { marginTop: 24, fontSize: 8, color: "#666" },
-});
-
-function formatEuros(value: Prisma.Decimal | number | null | undefined): string {
-  if (value === null || value === undefined) return "-";
-  const num = typeof value === "number" ? value : value.toNumber();
-  return num.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
-}
-
-function formatDate(date: Date | null | undefined): string {
-  if (!date) return "-";
-  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
-}
-
-function FactureDocument({ facture }: { facture: FactureWithRelations }) {
+function FactureDocument({
+  facture,
+  siteSettings,
+}: {
+  facture: FactureWithRelations;
+  siteSettings: SiteSettings | null;
+}) {
   const reservation = facture.devis.reservation;
+  // Destinataire : compte client (côté devis en priorité, sinon rattaché
+  // directement à la facture) avec repli sur les coordonnées de la
+  // réservation liée, même logique que pour le devis.
   const client = facture.devis.client ?? facture.client;
-  const nom = reservation?.nomOuRaisonSociale ?? client?.nomOuRaisonSociale ?? "-";
-  const adresse = reservation?.adressePostale ?? client?.adressePostale ?? "-";
-  const email = reservation?.email ?? client?.email ?? "-";
-  const telephone = reservation?.telephone ?? client?.telephone ?? "-";
-  const totalPersonnes = facture.nbAdultesReel + facture.nbEnfantsReel;
+  const nom = client?.nomOuRaisonSociale ?? reservation?.nomOuRaisonSociale ?? "-";
+  const adresse = client?.adressePostale ?? reservation?.adressePostale ?? null;
+  const email = client?.email ?? reservation?.email ?? null;
+  const telephone = client?.telephone ?? reservation?.telephone ?? null;
+
+  // La Facture n'a pas ses propres date/heure/durée de prestation : elle a
+  // toujours un devis lié (`devisId` requis), on les lit donc à travers lui.
+  const datePrestation = facture.devis.dateEvenement ?? reservation?.creneau.dateHeure ?? null;
+  const dureeMinutes = facture.devis.dureeMinutes ?? null;
+
+  const lignesTriees = [...facture.lignes].sort((a, b) => a.ordre - b.ordre);
+
+  const dateEmission = facture.envoyeeLe ?? facture.createdAt;
 
   return (
     <Document title={`Facture ${facture.numero}`}>
-      <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
+      <Page size="A4" style={sharedStyles.page}>
+        <View style={sharedStyles.headerRow}>
           <View>
-            <Text style={styles.title}>Facture</Text>
-            <Text style={styles.numero}>{facture.numero}</Text>
+            <Text style={sharedStyles.docTitle}>FACTURE</Text>
+            <Text style={sharedStyles.docNumero}>{facture.numero}</Text>
           </View>
           <View>
-            <Text style={styles.label}>Date</Text>
-            <Text style={styles.value}>{formatDate(facture.createdAt)}</Text>
+            <Text style={sharedStyles.docDate}>{`Date d'émission : ${formatDateParis(dateEmission)}`}</Text>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Client</Text>
-          <Text>{nom}</Text>
-          <Text>{adresse}</Text>
-          <Text>{email}</Text>
-          <Text>{telephone}</Text>
+        <View style={sharedStyles.partiesRow}>
+          <ExpediteurBlock
+            info={{
+              raisonSociale: siteSettings?.raisonSociale ?? null,
+              siteName: siteSettings?.siteName ?? null,
+              adresseSiege: siteSettings?.adresseSiege ?? null,
+              siret: siteSettings?.siret ?? null,
+              emailContact: siteSettings?.emailContact ?? null,
+              telephoneContact: siteSettings?.telephoneContact ?? null,
+            }}
+          />
+          <DestinataireBlock info={{ nom, adresse, email, telephone }} />
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Détail</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Nombre de personnes (réel)</Text>
-            <Text style={styles.value}>
-              {totalPersonnes} ({facture.nbAdultesReel} adulte(s), {facture.nbEnfantsReel} enfant(s))
+        <PrestationSection info={{ date: datePrestation, dureeMinutes }} />
+
+        <LignesTable lignes={lignesTriees} />
+
+        <View style={sharedStyles.totalsBox}>
+          <View style={sharedStyles.totalsRow}>
+            <Text style={sharedStyles.totalsLabel}>TVA</Text>
+            <Text style={sharedStyles.totalsValue}>0 % (association non assujettie)</Text>
+          </View>
+          <View style={sharedStyles.grandTotalRow}>
+            <Text style={sharedStyles.grandTotalLabel}>Montant total</Text>
+            <Text style={sharedStyles.grandTotalValue}>{formatEuros(facture.montantFinal)}</Text>
+          </View>
+          <View style={sharedStyles.totalsRow}>
+            <Text style={sharedStyles.totalsLabel}>Montant du solde restant dû</Text>
+            <Text style={sharedStyles.totalsValue}>{formatEuros(facture.montantFinal)}</Text>
+          </View>
+          <View style={sharedStyles.totalsRow}>
+            <Text style={sharedStyles.totalsLabel}>Statut du solde</Text>
+            <Text style={sharedStyles.totalsValue}>
+              {statutPaiementLabel(facture.soldeStatutPaiement, null, facture.soldeDateReglement)}
             </Text>
           </View>
-          {facture.ajuste && (
-            <View style={styles.row}>
-              <Text style={styles.label}>Facture ajustée le</Text>
-              <Text style={styles.value}>{formatDate(facture.ajusteLe)}</Text>
-            </View>
-          )}
-
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Montant final</Text>
-            <Text style={styles.totalValue}>{formatEuros(facture.montantFinal)}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Taux de TVA</Text>
-            <Text style={styles.value}>{facture.tauxTVA.toString()}% (association non assujettie)</Text>
-          </View>
         </View>
 
-        {facture.noteLitige && (
-          <View style={styles.litigeBox}>
-            <Text style={styles.litigeTitle}>Note de litige</Text>
-            <Text>{facture.noteLitige}</Text>
-          </View>
-        )}
+        {facture.ajuste ? (
+          <Text style={sharedStyles.ajusteNote}>
+            {`Facture ajustée le ${formatDateParis(facture.ajusteLe)}${
+              facture.ajustePar ? ` par ${facture.ajustePar}` : ""
+            }`}
+          </Text>
+        ) : null}
 
-        <Text style={styles.footerNote}>
+        {facture.noteLitige ? (
+          <View style={sharedStyles.litigeBox}>
+            <Text style={sharedStyles.litigeTitle}>Litige signalé :</Text>
+            <Text style={sharedStyles.litigeText}>{facture.noteLitige}</Text>
+          </View>
+        ) : null}
+
+        <NotesSection notes={facture.notes} />
+
+        <CgvSection cgvTexte={siteSettings?.cgvTexte} />
+
+        <Text style={sharedStyles.footerNote}>
           TVA non applicable, art. 293 B du CGI — association non assujettie à la TVA.
         </Text>
       </Page>
@@ -120,5 +139,6 @@ function FactureDocument({ facture }: { facture: FactureWithRelations }) {
 
 /** Rend le PDF de la facture dans un Buffer, prêt à être écrit sur disque ou attaché à un e-mail. */
 export async function renderFacturePdf(facture: FactureWithRelations): Promise<Buffer> {
-  return renderToBuffer(<FactureDocument facture={facture} />);
+  const siteSettings = await prisma.siteSettings.findUnique({ where: { id: 1 } });
+  return renderToBuffer(<FactureDocument facture={facture} siteSettings={siteSettings} />);
 }

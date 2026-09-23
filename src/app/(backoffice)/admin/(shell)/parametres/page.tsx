@@ -12,6 +12,12 @@ export default async function AdminParametresPage() {
           siteName: settings?.siteName ?? null,
           headerImageUrl: settings?.headerImageUrl ?? null,
           backgroundImageUrl: settings?.backgroundImageUrl ?? null,
+          raisonSociale: settings?.raisonSociale ?? null,
+          siret: settings?.siret ?? null,
+          adresseSiege: settings?.adresseSiege ?? null,
+          emailContact: settings?.emailContact ?? null,
+          telephoneContact: settings?.telephoneContact ?? null,
+          cgvTexte: settings?.cgvTexte ?? null,
         }}
       />
     </div>

@@ -85,7 +85,11 @@ async function handleDevisEnvoye(reservationId: string): Promise<void> {
 
   const devis = await prisma.devis.findUniqueOrThrow({
     where: { id: reservation.devis.id },
-    include: { reservation: true, client: true },
+    include: {
+      reservation: { include: { creneau: { include: { visite: true } } } },
+      client: true,
+      lignes: true,
+    },
   });
 
   const pdfBuffer = await renderDevisPdf(devis);
@@ -168,12 +172,15 @@ async function handleConfirme(reservationId: string): Promise<void> {
 
 /**
  * REALISE (statut 9) : génère automatiquement la `Facture` à partir du
- * `Devis` lié (copie nb personnes/montant/taux TVA).
+ * `Devis` lié (copie nb personnes/montant/taux TVA), ainsi que ses lignes
+ * (`DevisLigne` -> `FactureLigne`, même dénomination/quantité/prix — la
+ * facture reprend le détail du devis tel quel ; un ajustement ultérieur du
+ * montant final se fait via `FactureEditForm`, pas en modifiant ces lignes).
  */
 async function handleRealise(reservationId: string): Promise<void> {
   const reservation = await prisma.reservation.findUniqueOrThrow({
     where: { id: reservationId },
-    include: { devis: true },
+    include: { devis: { include: { lignes: true } } },
   });
 
   if (!reservation.devis) {
@@ -195,6 +202,17 @@ async function handleRealise(reservationId: string): Promise<void> {
         nbEnfantsReel: devis.nbEnfants,
         montantFinal: devis.montantTotal,
         tauxTVA: devis.tauxTVA,
+        notes: devis.notes,
+        lignes: {
+          create: devis.lignes.map((l) => ({
+            produitId: l.produitId,
+            denomination: l.denomination,
+            quantite: l.quantite,
+            prixUnitaire: l.prixUnitaire,
+            montantLigne: l.montantLigne,
+            ordre: l.ordre,
+          })),
+        },
       },
     });
   });
@@ -218,7 +236,13 @@ async function handleFactureEnvoyee(reservationId: string): Promise<void> {
 
   const facture = await prisma.facture.findUniqueOrThrow({
     where: { id: factureRef.id },
-    include: { devis: { include: { reservation: true, client: true } }, client: true },
+    include: {
+      devis: {
+        include: { reservation: { include: { creneau: { include: { visite: true } } } }, client: true },
+      },
+      client: true,
+      lignes: true,
+    },
   });
 
   const pdfBuffer = await renderFacturePdf(facture);

@@ -5,6 +5,7 @@ import { auth, signOut } from "@/lib/auth";
 const NAV_ITEMS = [
   { href: "/admin", label: "Tableau de bord" },
   { href: "/admin/visites", label: "Visites" },
+  { href: "/admin/produits", label: "Produits" },
   { href: "/admin/creneaux", label: "Créneaux" },
   { href: "/admin/calendrier", label: "Calendrier" },
   { href: "/admin/reservations", label: "Réservations" },
