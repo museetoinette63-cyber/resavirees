@@ -357,10 +357,63 @@ model SiteSettings {
   telephoneContact String?
   cgvTexte         String? @db.Text
 
+  // Ambiance sonore optionnelle (fichier audio uploadé par l'admin — horloge
+  // comtoise, feu de cheminée, oiseaux...). Lecture déclenchée par un clic
+  // visiteur (les navigateurs bloquent l'autoplay sonore de toute façon),
+  // coupée par défaut.
+  sonAmbianceUrl String?
+  sonAmbianceNom String?
+
   updatedAt DateTime @updatedAt
 }
 
 model NumberingCounter {
   id  String @id // ex. "DEVIS-2026", "FACTURE-2026"
   seq Int    @default(0)
+}
+
+enum BlocEmplacement {
+  ACCUEIL // page catalogue uniquement
+  SITE_ENTIER // toutes les pages publiques (rendu dans le layout public)
+}
+
+enum BlocType {
+  TEXTE // titre + paragraphe(s)
+  TEXTE_IMAGE // idem + image
+  ENCART // mise en avant visuelle (fond/bordure marqués) — annonce, alerte
+}
+
+/**
+ * Blocs de contenu personnalisables par l'admin, affichés sur le site
+ * public sans intervention développeur (personnalisation demandée par le
+ * client : "encarts", infos, annonces...).
+ */
+model BlocContenu {
+  id          String          @id @default(cuid())
+  type        BlocType
+  emplacement BlocEmplacement
+  titre       String?
+  contenu     String          @db.Text
+  imageUrl    String?
+  ordre       Int             @default(0)
+  actif       Boolean         @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([emplacement, actif, ordre])
+}
+
+/** Photos du diaporama d'en-tête (défilement automatique, site entier). */
+model PhotoCarrousel {
+  id      String  @id @default(cuid())
+  url     String
+  legende String?
+  ordre   Int     @default(0)
+  actif   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([actif, ordre])
 }
