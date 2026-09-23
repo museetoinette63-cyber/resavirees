@@ -1,18 +1,22 @@
 import { randomUUID } from "crypto";
-import { promises as fs } from "fs";
-import path from "path";
+import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
-// Generic image upload endpoint shared by every admin form that needs to
-// store a picture (Visite banner, SiteSettings header/background, ...).
+// Generic upload endpoint shared by every admin form that needs to store a
+// file (Visite banner, SiteSettings header/background, carrousel photos,
+// ambient sound, ...). Stored on Vercel Blob (public access) since the
+// serverless filesystem is read-only in production.
 // Kept deliberately generic (folder + file in, { url } out) so unrelated
 // admin screens built in parallel can reuse it without changes here.
 
-const MAX_SIZE_BYTES = 5 * 1024 * 1024; // ~5MB
-const ALLOWED_FOLDERS = new Set(["visites", "site"]);
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // ~5MB
+const MAX_AUDIO_SIZE_BYTES = 15 * 1024 * 1024; // ~15MB
 
-function extensionForMimeType(mimeType: string): string | null {
+const IMAGE_FOLDERS = new Set(["visites", "site", "carrousel"]);
+const AUDIO_FOLDERS = new Set(["audio"]);
+
+function extensionForImageMimeType(mimeType: string): string | null {
   switch (mimeType) {
     case "image/jpeg":
       return "jpg";
@@ -26,6 +30,20 @@ function extensionForMimeType(mimeType: string): string | null {
       return "svg";
     case "image/avif":
       return "avif";
+    default:
+      return null;
+  }
+}
+
+function extensionForAudioMimeType(mimeType: string): string | null {
+  switch (mimeType) {
+    case "audio/mpeg":
+      return "mp3";
+    case "audio/ogg":
+      return "ogg";
+    case "audio/wav":
+    case "audio/x-wav":
+      return "wav";
     default:
       return null;
   }
@@ -50,32 +68,48 @@ export async function POST(request: NextRequest) {
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Champ 'file' manquant." }, { status: 400 });
   }
-  if (typeof folderRaw !== "string" || !ALLOWED_FOLDERS.has(folderRaw)) {
+  if (
+    typeof folderRaw !== "string" ||
+    (!IMAGE_FOLDERS.has(folderRaw) && !AUDIO_FOLDERS.has(folderRaw))
+  ) {
     return NextResponse.json(
-      { error: "Champ 'folder' invalide (attendu : 'visites' ou 'site')." },
+      { error: "Champ 'folder' invalide (attendu : 'visites', 'site', 'carrousel' ou 'audio')." },
       { status: 400 }
     );
   }
   const folder = folderRaw;
+  const isAudioFolder = AUDIO_FOLDERS.has(folder);
 
-  if (!file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "Le fichier doit être une image." }, { status: 400 });
-  }
-  if (file.size > MAX_SIZE_BYTES) {
-    return NextResponse.json({ error: "L'image dépasse la taille maximale de 5 Mo." }, { status: 400 });
-  }
-
-  const extension = extensionForMimeType(file.type);
-  if (!extension) {
-    return NextResponse.json({ error: "Type d'image non supporté." }, { status: 400 });
+  let extension: string | null;
+  if (isAudioFolder) {
+    if (!file.type.startsWith("audio/")) {
+      return NextResponse.json({ error: "Le fichier doit être un fichier audio." }, { status: 400 });
+    }
+    if (file.size > MAX_AUDIO_SIZE_BYTES) {
+      return NextResponse.json({ error: "Le fichier audio dépasse la taille maximale de 15 Mo." }, { status: 400 });
+    }
+    extension = extensionForAudioMimeType(file.type);
+    if (!extension) {
+      return NextResponse.json({ error: "Type audio non supporté (mp3, ogg ou wav)." }, { status: 400 });
+    }
+  } else {
+    if (!file.type.startsWith("image/")) {
+      return NextResponse.json({ error: "Le fichier doit être une image." }, { status: 400 });
+    }
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      return NextResponse.json({ error: "L'image dépasse la taille maximale de 5 Mo." }, { status: 400 });
+    }
+    extension = extensionForImageMimeType(file.type);
+    if (!extension) {
+      return NextResponse.json({ error: "Type d'image non supporté." }, { status: 400 });
+    }
   }
 
   const filename = `${randomUUID()}.${extension}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
-  await fs.mkdir(uploadDir, { recursive: true });
+  const blob = await put(`${folder}/${filename}`, file, {
+    access: "public",
+    contentType: file.type,
+  });
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await fs.writeFile(path.join(uploadDir, filename), buffer);
-
-  return NextResponse.json({ url: `/uploads/${folder}/${filename}` });
+  return NextResponse.json({ url: blob.url });
 }

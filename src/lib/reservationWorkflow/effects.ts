@@ -22,8 +22,7 @@ import { demandeRecueEmail, devisEnvoyeEmail, factureEnvoyeeEmail } from "../ema
 import { renderDevisPdf } from "../pdf/devisPdf";
 import { renderFacturePdf } from "../pdf/facturePdf";
 import { createOrUpdateEvent, deleteEvent } from "../google/calendarSync";
-import { promises as fs } from "fs";
-import path from "path";
+import { put } from "@vercel/blob";
 
 type EffectHandler = (reservationId: string) => Promise<void>;
 
@@ -94,10 +93,11 @@ async function handleDevisEnvoye(reservationId: string): Promise<void> {
 
   const pdfBuffer = await renderDevisPdf(devis);
 
-  const dir = path.join(process.cwd(), "public", "uploads", "devis");
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, `${devis.numero}.pdf`), pdfBuffer);
-  const pdfUrl = `/uploads/devis/${devis.numero}.pdf`;
+  const blob = await put(`devis/${devis.numero}.pdf`, pdfBuffer, {
+    access: "public",
+    contentType: "application/pdf",
+  });
+  const pdfUrl = blob.url;
 
   const acompteDateLimite = new Date();
   acompteDateLimite.setDate(acompteDateLimite.getDate() + devis.acompteDelaiJours);
@@ -247,10 +247,11 @@ async function handleFactureEnvoyee(reservationId: string): Promise<void> {
 
   const pdfBuffer = await renderFacturePdf(facture);
 
-  const dir = path.join(process.cwd(), "public", "uploads", "factures");
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, `${facture.numero}.pdf`), pdfBuffer);
-  const pdfUrl = `/uploads/factures/${facture.numero}.pdf`;
+  const blob = await put(`factures/${facture.numero}.pdf`, pdfBuffer, {
+    access: "public",
+    contentType: "application/pdf",
+  });
+  const pdfUrl = blob.url;
 
   const updatedFacture = await prisma.facture.update({
     where: { id: facture.id },
