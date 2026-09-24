@@ -64,7 +64,10 @@ export default async function ReserverPage({
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <div>
-        <Link href={`/visites/${slug}`} className="text-sm text-ink-soft hover:text-rust">
+        <Link
+          href={`/visites/${slug}`}
+          className="text-sm text-ink-soft transition-colors duration-150 ease-snappy hover:text-rust"
+        >
           ← Retour à la visite
         </Link>
         <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-rust-dark">

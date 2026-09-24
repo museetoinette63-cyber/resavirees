@@ -37,9 +37,53 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-fraunces);
+
+  /* Motion : courbes fortes (les easings CSS natifs manquent de "punch") —
+     ease-snappy pour les interactions (hover/press/apparitions), ease-fluid
+     pour un mouvement continu à l'écran (ex. fondu du carrousel). */
+  --ease-snappy: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-fluid: cubic-bezier(0.77, 0, 0.175, 1);
+
+  --animate-fade-in-up: fade-in-up 450ms var(--ease-snappy) both;
+  --animate-scale-in: scale-in 400ms var(--ease-snappy) both;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* Le mouvement reste perceptible (comprehension) mais jamais vestibulaire :
+   on raccourcit tout à quasi-zéro plutôt que de tout supprimer. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

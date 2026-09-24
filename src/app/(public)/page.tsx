@@ -40,11 +40,12 @@ export default async function CataloguePage() {
         </p>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2">
-          {visites.map((visite) => (
+          {visites.map((visite, i) => (
             <Link
               key={visite.id}
               href={`/visites/${visite.slug}`}
-              className="group overflow-hidden rounded-lg border-2 border-border-warm bg-cream-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rust/10"
+              style={{ animationDelay: `${i * 60}ms` }}
+              className="group animate-fade-in-up overflow-hidden rounded-lg border-2 border-border-warm bg-cream-2 shadow-sm transition-[transform,box-shadow] duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rust/10 active:translate-y-0 active:scale-[0.99]"
             >
               {visite.imageBanniereUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -59,7 +60,7 @@ export default async function CataloguePage() {
                 </div>
               )}
               <div className="space-y-2 p-5">
-                <h2 className="font-display text-lg font-semibold text-ink group-hover:text-rust-dark">
+                <h2 className="font-display text-lg font-semibold text-ink transition-colors duration-150 ease-snappy group-hover:text-rust-dark">
                   {visite.nom}
                 </h2>
                 <p className="line-clamp-3 text-sm text-ink-soft">{visite.description}</p>

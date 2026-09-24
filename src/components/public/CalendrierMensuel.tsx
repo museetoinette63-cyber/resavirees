@@ -79,7 +79,7 @@ export default function CalendrierMensuel({ visiteSlug, creneaux }: CalendrierMe
           type="button"
           onClick={() => setDisplayedMonth((mois) => subMonths(mois, 1))}
           disabled={!peutReculer}
-          className="rounded-md px-3 py-1.5 text-sm font-medium text-ink-soft hover:bg-gold-light/30 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-md px-3 py-1.5 text-sm font-medium text-ink-soft transition-[background-color,transform] duration-150 ease-snappy hover:bg-gold-light/30 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
         >
           ← Mois précédent
         </button>
@@ -89,7 +89,7 @@ export default function CalendrierMensuel({ visiteSlug, creneaux }: CalendrierMe
         <button
           type="button"
           onClick={() => setDisplayedMonth((mois) => addMonths(mois, 1))}
-          className="rounded-md px-3 py-1.5 text-sm font-medium text-ink-soft hover:bg-gold-light/30"
+          className="rounded-md px-3 py-1.5 text-sm font-medium text-ink-soft transition-[background-color,transform] duration-150 ease-snappy hover:bg-gold-light/30 active:scale-95"
         >
           Mois suivant →
         </button>
@@ -119,10 +119,10 @@ export default function CalendrierMensuel({ visiteSlug, creneaux }: CalendrierMe
               disabled={!aDesCreneaux}
               onClick={() => setSelectedDayKey(key)}
               className={[
-                "aspect-square rounded-md text-sm transition",
+                "aspect-square rounded-md text-sm transition-[background-color,transform,box-shadow] duration-150 ease-snappy",
                 !dansLeMois ? "text-ink-soft/30" : "",
                 aDesCreneaux
-                  ? "cursor-pointer bg-rust font-semibold text-cream hover:bg-rust-dark"
+                  ? "cursor-pointer bg-rust font-semibold text-cream hover:bg-rust-dark active:scale-90"
                   : "cursor-default text-ink-soft",
                 estSelectionne ? "ring-2 ring-gold ring-offset-1 ring-offset-cream-2" : "",
               ]
@@ -136,18 +136,18 @@ export default function CalendrierMensuel({ visiteSlug, creneaux }: CalendrierMe
       </div>
 
       {selectedDayKey && creneauReference ? (
-        <div className="mt-6 border-t-2 border-border-warm pt-4">
+        <div key={selectedDayKey} className="mt-6 animate-fade-in-up border-t-2 border-border-warm pt-4">
           <p className="mb-2 text-sm font-medium text-ink">
             Créneaux disponibles le{" "}
             {formatInTimeZone(creneauReference.dateHeure, TIME_ZONE, "EEEE d MMMM yyyy", { locale: fr })}
           </p>
           <ul className="flex flex-wrap gap-2">
-            {selectedCreneaux.map((creneau) => (
-              <li key={creneau.id}>
+            {selectedCreneaux.map((creneau, i) => (
+              <li key={creneau.id} style={{ animationDelay: `${i * 40}ms` }} className="animate-fade-in-up">
                 <button
                   type="button"
                   onClick={() => router.push(`/visites/${visiteSlug}/reserver/${creneau.id}`)}
-                  className="rounded-md border-2 border-gold px-3 py-1.5 text-sm font-medium text-rust-dark hover:bg-gold hover:text-cream"
+                  className="rounded-md border-2 border-gold px-3 py-1.5 text-sm font-medium text-rust-dark transition-[background-color,color,transform] duration-150 ease-snappy hover:bg-gold hover:text-cream active:scale-95"
                 >
                   {formatInTimeZone(creneau.dateHeure, TIME_ZONE, "HH:mm", { locale: fr })}
                 </button>

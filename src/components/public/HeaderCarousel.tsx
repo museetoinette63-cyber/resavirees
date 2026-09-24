@@ -34,7 +34,7 @@ export default function HeaderCarousel({ photos }: { photos: CarouselPhoto[] }) 
           key={photo.id}
           src={photo.url}
           alt={photo.legende ?? ""}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-fluid ${
             i === index ? "opacity-100" : "opacity-0"
           }`}
         />
