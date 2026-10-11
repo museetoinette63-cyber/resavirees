@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 /*
- * Palette "affiche de théâtre rétro" : crème chaude en fond, encre brune
- * pour le texte, terracotta comme couleur d'action principale, or moutarde
- * en accent. Associée à une serif d'affiche (Fraunces) pour les titres et
- * une sans-serif propre (Geist) pour le corps de texte — contraste
- * "moderne mais rétro" demandé.
+ * Palette "pierre et lichen" : calcaire clair en fond, basalte pour le
+ * texte (clin d'œil à la pierre de lave auvergnate), vert lichen comme
+ * couleur d'action, ocre fané en accent, brique réservée aux erreurs.
+ * Typographie de livre ancien : Libre Caslon (titres) + Source Sans (texte).
  */
 :root {
-  --background: #fbf2e3;
-  --foreground: #2e2118;
+  --background: #ece6d6;
+  --foreground: #26231f;
 
-  --color-cream: #fbf2e3;
-  --color-cream-2: #f5e6cc;
-  --color-ink: #2e2118;
-  --color-ink-soft: #6b5745;
-  --color-rust: #be4a2e;
-  --color-rust-dark: #9c3b22;
-  --color-gold: #c68a2e;
-  --color-gold-light: #e8c77a;
-  --color-border-warm: #e3cfa8;
+  --color-cream: #ece6d6;
+  --color-cream-2: #e1d9c4;
+  --color-ink: #26231f;
+  --color-ink-soft: #5a554a;
+  --color-moss: #4d6340;
+  --color-moss-dark: #34482b;
+  --color-ochre: #9a7b2f;
+  --color-straw: #d6c994;
+  --color-border-stone: #c4baa0;
+  --color-brick: #9b3d2a;
 }
 
 @theme inline {
@@ -29,14 +29,14 @@
   --color-cream-2: var(--color-cream-2);
   --color-ink: var(--color-ink);
   --color-ink-soft: var(--color-ink-soft);
-  --color-rust: var(--color-rust);
-  --color-rust-dark: var(--color-rust-dark);
-  --color-gold: var(--color-gold);
-  --color-gold-light: var(--color-gold-light);
-  --color-border-warm: var(--color-border-warm);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-fraunces);
+  --color-moss: var(--color-moss);
+  --color-moss-dark: var(--color-moss-dark);
+  --color-ochre: var(--color-ochre);
+  --color-straw: var(--color-straw);
+  --color-border-stone: var(--color-border-stone);
+  --color-brick: var(--color-brick);
+  --font-sans: var(--font-source-sans);
+  --font-display: var(--font-caslon);
 
   /* Motion : courbes fortes (les easings CSS natifs manquent de "punch") —
      ease-snappy pour les interactions (hover/press/apparitions), ease-fluid
@@ -51,7 +51,7 @@
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -70,17 +70,15 @@
   }
 }
 
-/* Fond "papier d'affiche" : halo chaud en haut + grain très discret. */
 body {
   background-color: var(--background);
-  background-image:
-    radial-gradient(ellipse 80% 40% at 50% -5%, rgba(232, 199, 122, 0.35), transparent 70%),
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.18  0 0 0 0 0.13  0 0 0 0 0.09  0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   color: var(--foreground);
+  font-size: 1.0625rem;
+  line-height: 1.6;
 }
 
 ::selection {
-  background: var(--color-gold-light);
+  background: var(--color-straw);
   color: var(--color-ink);
 }
 

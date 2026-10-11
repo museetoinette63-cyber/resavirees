@@ -10,10 +10,19 @@ import PhotoFrame from "@/components/public/PhotoFrame";
 export const dynamic = "force-dynamic";
 
 const ETAPES = [
-  { titre: "Choisissez une visite", texte: "Parcourez nos parcours théâtralisés et trouvez celui qui vous tente." },
-  { titre: "Sélectionnez une date", texte: "Le calendrier n'affiche que les créneaux réellement disponibles." },
-  { titre: "Envoyez votre demande", texte: "Nous validons puis vous adressons un devis détaillé par e-mail." },
+  { titre: "Choisir une visite", texte: "Parcourez nos parcours théâtralisés et retenez celui qui vous convient." },
+  { titre: "Choisir une date", texte: "Le calendrier n'affiche que les créneaux réellement disponibles." },
+  { titre: "Envoyer votre demande", texte: "Nous la validons puis vous adressons un devis détaillé par e-mail." },
 ];
+
+function Rubrique({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <h2 id={id} className="flex items-center gap-4 font-display text-2xl font-bold text-moss-dark">
+      <span>{children}</span>
+      <span className="h-px flex-1 bg-ink/30" aria-hidden="true" />
+    </h2>
+  );
+}
 
 export default async function CataloguePage() {
   const [visites, blocs] = await Promise.all([
@@ -29,76 +38,61 @@ export default async function CataloguePage() {
   ]);
 
   return (
-    <div className="space-y-16">
-      <section className="mx-auto max-w-3xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">
-          Visites guidées théâtralisées
-        </p>
-        <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-rust-dark sm:text-5xl lg:text-6xl">
-          Quand l&apos;histoire <span className="italic text-rust">prend vie</span> sous vos yeux
+    <div className="space-y-14">
+      <section className="grid gap-4 md:grid-cols-[3fr_2fr] md:items-end md:gap-12">
+        <h1 className="font-display text-4xl font-bold leading-tight text-moss-dark md:text-5xl">
+          Nos visites guidées théâtralisées
         </h1>
-        <div className="mx-auto mt-6 flex items-center justify-center gap-3 text-gold" aria-hidden="true">
-          <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold" />
-          <span>✦</span>
-          <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold" />
-        </div>
-        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-ink-soft">
+        <p className="text-lg text-ink-soft">
           Découvrez nos parcours et réservez votre créneau en ligne.
         </p>
       </section>
 
       <BlocsContenu blocs={blocs} />
 
-      <section aria-labelledby="visites-titre" className="space-y-8">
-        <h2 id="visites-titre" className="text-center font-display text-3xl font-semibold tracking-tight text-rust-dark">
-          Nos visites
-        </h2>
+      <section aria-labelledby="visites-titre" className="space-y-6">
+        <Rubrique id="visites-titre">Nos visites</Rubrique>
 
         {visites.length === 0 ? (
-          <p className="rounded-2xl border-2 border-border-warm bg-cream-2 p-8 text-center text-ink-soft">
+          <p className="border border-border-stone bg-cream-2 p-6 text-ink-soft">
             Aucune visite n&apos;est disponible à la réservation pour le moment. Revenez bientôt !
           </p>
         ) : (
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visites.map((visite, i) => (
               <Link
                 key={visite.id}
                 href={`/visites/${visite.slug}`}
-                style={{ animationDelay: `${i * 70}ms` }}
-                className="group flex animate-fade-in-up flex-col overflow-hidden rounded-3xl border border-border-warm bg-cream-2 shadow-[0_18px_40px_-26px_rgba(46,33,24,0.55)] transition-[transform,box-shadow] duration-300 ease-snappy hover:-translate-y-1.5 hover:shadow-[0_28px_50px_-24px_rgba(156,59,34,0.45)] active:translate-y-0 active:scale-[0.99]"
+                style={{ animationDelay: `${i * 60}ms` }}
+                className="group flex animate-fade-in-up flex-col border border-ink/30 bg-cream transition-colors duration-200 ease-snappy hover:border-moss-dark"
               >
                 {visite.imageBanniereUrl ? (
                   <PhotoFrame src={visite.imageBanniereUrl} alt={visite.nom} className="aspect-[4/3] w-full" />
                 ) : (
-                  <div
-                    aria-hidden="true"
-                    className="flex aspect-[4/3] w-full items-center justify-center bg-gradient-to-br from-gold-light/60 via-cream-2 to-rust/20 font-display text-5xl text-gold"
-                  >
-                    ✦
+                  <div className="flex aspect-[4/3] w-full items-center justify-center bg-cream-2 font-display italic text-ink-soft">
+                    Photographie à venir
                   </div>
                 )}
-                <div className="flex flex-1 flex-col gap-3 p-6">
-                  <h3 className="font-display text-2xl font-semibold leading-tight tracking-tight text-ink transition-colors duration-150 ease-snappy group-hover:text-rust-dark">
+                <div className="flex flex-1 flex-col gap-3 border-t border-ink/30 p-5">
+                  <h3 className="font-display text-xl font-bold leading-snug text-ink group-hover:text-moss-dark">
                     {visite.nom}
                   </h3>
-                  <p className="line-clamp-3 text-sm leading-relaxed text-ink-soft">{visite.description}</p>
-                  <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-3">
-                    <div className="flex flex-wrap gap-2 text-xs font-semibold">
-                      <span className="rounded-full bg-gold-light/50 px-3 py-1 text-rust-dark">
-                        Adulte {formatEuros(visite.tarifAdulte)}
-                      </span>
-                      <span className="rounded-full bg-gold-light/50 px-3 py-1 text-rust-dark">
-                        Enfant {formatEuros(visite.tarifEnfant)}
-                      </span>
+                  <p className="line-clamp-3 text-base text-ink-soft">{visite.description}</p>
+                  <dl className="mt-auto space-y-1 pt-3 text-sm">
+                    <div className="flex items-baseline gap-2">
+                      <dt>Adulte</dt>
+                      <span className="flex-1 border-b border-dotted border-ink/40" aria-hidden="true" />
+                      <dd className="font-semibold tabular-nums">{formatEuros(visite.tarifAdulte)}</dd>
                     </div>
-                    <span className="text-sm font-semibold text-rust">
-                      Voir les dates
-                      <span className="inline-block transition-transform duration-200 ease-snappy group-hover:translate-x-1">
-                        {" "}
-                        →
-                      </span>
-                    </span>
-                  </div>
+                    <div className="flex items-baseline gap-2">
+                      <dt>Enfant</dt>
+                      <span className="flex-1 border-b border-dotted border-ink/40" aria-hidden="true" />
+                      <dd className="font-semibold tabular-nums">{formatEuros(visite.tarifEnfant)}</dd>
+                    </div>
+                  </dl>
+                  <span className="pt-2 font-semibold text-moss underline decoration-1 underline-offset-4">
+                    Consulter les dates
+                  </span>
                 </div>
               </Link>
             ))}
@@ -106,18 +100,14 @@ export default async function CataloguePage() {
         )}
       </section>
 
-      <section aria-labelledby="etapes-titre" className="rounded-3xl bg-ink px-6 py-12 text-cream sm:px-12">
-        <h2 id="etapes-titre" className="text-center font-display text-3xl font-semibold tracking-tight">
-          Comment réserver ?
-        </h2>
-        <ol className="mt-10 grid gap-8 sm:grid-cols-3">
+      <section aria-labelledby="etapes-titre" className="space-y-6">
+        <Rubrique id="etapes-titre">Pour réserver</Rubrique>
+        <ol className="grid gap-6 sm:grid-cols-3">
           {ETAPES.map((etape, i) => (
-            <li key={etape.titre} className="space-y-3 text-center">
-              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 border-gold font-display text-xl text-gold-light">
-                {i + 1}
-              </span>
-              <h3 className="font-display text-lg font-semibold text-gold-light">{etape.titre}</h3>
-              <p className="text-sm leading-relaxed text-cream/70">{etape.texte}</p>
+            <li key={etape.titre} className="border-t border-ink/30 pt-4">
+              <span className="font-display text-3xl font-bold text-ochre">{i + 1}.</span>
+              <h3 className="mt-1 font-display text-lg font-bold">{etape.titre}</h3>
+              <p className="mt-1 text-base text-ink-soft">{etape.texte}</p>
             </li>
           ))}
         </ol>

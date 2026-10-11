@@ -37,7 +37,7 @@ export default async function VisiteDetailPage({
   return (
     <article className="space-y-8">
       {indisponible ? (
-        <p className="rounded-md border-2 border-gold bg-gold-light/30 px-4 py-3 text-sm text-rust-dark">
+        <p className="rounded-sm border-2 border-ochre bg-straw/30 px-4 py-3 text-sm text-moss-dark">
           Ce créneau vient d&apos;être réservé par quelqu&apos;un d&apos;autre. Merci d&apos;en choisir un
           nouveau ci-dessous.
         </p>
@@ -47,35 +47,40 @@ export default async function VisiteDetailPage({
         <PhotoFrame
           src={visite.imageBanniereUrl}
           alt={visite.nom}
-          className="aspect-[16/10] max-h-[70vh] w-full rounded-3xl border border-border-warm shadow-[0_24px_50px_-28px_rgba(46,33,24,0.55)] sm:aspect-[2/1]"
+          className="aspect-[16/10] max-h-[70vh] w-full border border-ink/30 sm:aspect-[2/1]"
         />
       ) : null}
 
-      <div className="max-w-3xl">
-        <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-rust-dark sm:text-5xl">
-          {visite.nom}
-        </h1>
-        <div className="mt-5 flex flex-wrap gap-2 text-sm font-semibold">
-          <span className="rounded-full bg-gold-light/50 px-4 py-1.5 text-rust-dark">
-            Adulte {formatEuros(visite.tarifAdulte)}
-          </span>
-          <span className="rounded-full bg-gold-light/50 px-4 py-1.5 text-rust-dark">
-            Enfant {formatEuros(visite.tarifEnfant)}
-          </span>
+      <div className="grid gap-8 md:grid-cols-[2fr_1fr]">
+        <div>
+          <h1 className="font-display text-4xl font-bold leading-tight text-moss-dark md:text-5xl">
+            {visite.nom}
+          </h1>
+          <p className="mt-6 whitespace-pre-line text-lg text-ink-soft">{visite.description}</p>
         </div>
-        <p className="mt-6 whitespace-pre-line text-lg leading-relaxed text-ink-soft">
-          {visite.description}
-        </p>
+        <dl className="h-fit space-y-2 border-t-4 border-moss-dark bg-cream-2 p-5 text-base">
+          <div className="flex items-baseline gap-2">
+            <dt>Adulte</dt>
+            <span className="flex-1 border-b border-dotted border-ink/40" aria-hidden="true" />
+            <dd className="font-semibold tabular-nums">{formatEuros(visite.tarifAdulte)}</dd>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <dt>Enfant</dt>
+            <span className="flex-1 border-b border-dotted border-ink/40" aria-hidden="true" />
+            <dd className="font-semibold tabular-nums">{formatEuros(visite.tarifEnfant)}</dd>
+          </div>
+        </dl>
       </div>
 
       <section>
-        <h2 className="mb-5 font-display text-3xl font-semibold tracking-tight text-rust-dark">
-          Choisissez une date
+        <h2 className="mb-5 flex items-center gap-4 font-display text-2xl font-bold text-moss-dark">
+          <span>Choisissez une date</span>
+          <span className="h-px flex-1 bg-ink/30" aria-hidden="true" />
         </h2>
         {creneauxSerialises.length > 0 ? (
           <CalendrierMensuel visiteSlug={visite.slug} creneaux={creneauxSerialises} />
         ) : (
-          <p className="rounded-lg border-2 border-border-warm bg-cream-2 p-6 text-center text-ink-soft">
+          <p className="rounded-sm border-2 border-border-stone bg-cream-2 p-6 text-center text-ink-soft">
             Aucun créneau n&apos;est disponible pour le moment. Revenez bientôt !
           </p>
         )}

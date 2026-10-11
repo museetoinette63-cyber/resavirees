@@ -9,12 +9,12 @@ export type CarouselPhoto = {
   legende: string | null;
 };
 
-const ROTATE_MS = 6000;
+const ROTATE_MS = 6500;
 
-// Diaporama d'en-tête : chaque photo est affichée EN ENTIER (object-contain)
-// sur un fond flouté de la même image — jamais rognée. Grand format sur
-// l'accueil, plus compact sur les autres pages. Défilement automatique,
-// pause au survol, flèches, pastilles et balayage tactile.
+// Diaporama d'en-tête présenté comme un tirage encadré : chaque photo est
+// affichée EN ENTIER (object-contain) sur fond sombre, jamais rognée. Grand
+// format sur l'accueil, plus compact ailleurs. Défilement automatique, pause
+// au survol, flèches, compteur et balayage tactile.
 export default function HeaderCarousel({ photos }: { photos: CarouselPhoto[] }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
@@ -40,95 +40,70 @@ export default function HeaderCarousel({ photos }: { photos: CarouselPhoto[] }) 
     <section
       aria-roledescription="carrousel"
       aria-label="Photos"
-      className="mx-auto w-full max-w-6xl px-4 pt-6"
+      className="mx-auto w-full max-w-6xl px-4 pt-8"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div
-        className={`relative overflow-hidden rounded-[1.75rem] border border-gold/60 bg-ink shadow-[0_30px_60px_-28px_rgba(46,33,24,0.6)] ring-4 ring-cream-2 ${
-          isHome
-            ? "aspect-[4/3] max-h-[78vh] w-full sm:aspect-[16/9] lg:aspect-[2/1]"
-            : "aspect-[16/10] w-full sm:aspect-[3/1]"
-        }`}
-        onTouchStart={(e) => {
-          touchStartX.current = e.touches[0].clientX;
-        }}
-        onTouchEnd={(e) => {
-          if (touchStartX.current === null) return;
-          const delta = e.changedTouches[0].clientX - touchStartX.current;
-          touchStartX.current = null;
-          if (Math.abs(delta) > 40) go(current + (delta < 0 ? 1 : -1));
-        }}
-      >
-        {photos.map((photo, i) => {
-          const active = i === current;
-          return (
-            <div
+      <div className="border border-ink/30 bg-cream-2 p-2 sm:p-3">
+        <div
+          className={`relative w-full overflow-hidden bg-ink ${
+            isHome
+              ? "aspect-[4/3] max-h-[78vh] sm:aspect-[16/9] lg:aspect-[2/1]"
+              : "aspect-[16/10] sm:aspect-[3/1]"
+          }`}
+          onTouchStart={(e) => {
+            touchStartX.current = e.touches[0].clientX;
+          }}
+          onTouchEnd={(e) => {
+            if (touchStartX.current === null) return;
+            const delta = e.changedTouches[0].clientX - touchStartX.current;
+            touchStartX.current = null;
+            if (Math.abs(delta) > 40) go(current + (delta < 0 ? 1 : -1));
+          }}
+        >
+          {photos.map((photo, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               key={photo.id}
-              aria-hidden={!active}
-              className={`absolute inset-0 transition-[opacity,transform] duration-[1200ms] ease-fluid ${
-                active ? "scale-100 opacity-100" : "scale-[1.03] opacity-0"
+              src={photo.url}
+              alt={photo.legende ?? ""}
+              aria-hidden={i !== current}
+              className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-[900ms] ease-fluid ${
+                i === current ? "opacity-100" : "opacity-0"
               }`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={photo.url}
-                alt=""
-                aria-hidden="true"
-                className="absolute inset-0 h-full w-full scale-125 object-cover opacity-70 blur-2xl"
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={photo.url}
-                alt={photo.legende ?? ""}
-                className="relative h-full w-full object-contain"
-              />
-            </div>
-          );
-        })}
+            />
+          ))}
 
-        {count > 1 ? (
-          <>
-            <button
-              type="button"
-              onClick={() => go(current - 1)}
-              aria-label="Photo précédente"
-              className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-cream/85 text-xl text-rust-dark shadow-md backdrop-blur transition-[background-color,transform] duration-150 ease-snappy hover:bg-cream active:scale-90"
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              onClick={() => go(current + 1)}
-              aria-label="Photo suivante"
-              className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-cream/85 text-xl text-rust-dark shadow-md backdrop-blur transition-[background-color,transform] duration-150 ease-snappy hover:bg-cream active:scale-90"
-            >
-              ›
-            </button>
-          </>
-        ) : null}
+          {count > 1 ? (
+            <>
+              <button
+                type="button"
+                onClick={() => go(current - 1)}
+                aria-label="Photo précédente"
+                className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-ink/70 text-2xl leading-none text-cream transition-[background-color,transform] duration-150 ease-snappy hover:bg-ink active:scale-90"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={() => go(current + 1)}
+                aria-label="Photo suivante"
+                className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-ink/70 text-2xl leading-none text-cream transition-[background-color,transform] duration-150 ease-snappy hover:bg-ink active:scale-90"
+              >
+                ›
+              </button>
+            </>
+          ) : null}
+        </div>
       </div>
 
       {count > 1 || legende ? (
-        <div className="mt-4 flex flex-col items-center gap-2">
-          {legende ? (
-            <p className="text-center font-display text-lg italic text-ink-soft">{legende}</p>
-          ) : null}
+        <div className="mt-3 flex items-baseline justify-between gap-4 text-sm text-ink-soft">
+          <p className="font-display italic">{legende ?? ""}</p>
           {count > 1 ? (
-            <div className="flex items-center gap-2">
-              {photos.map((photo, i) => (
-                <button
-                  key={photo.id}
-                  type="button"
-                  onClick={() => go(i)}
-                  aria-label={`Afficher la photo ${i + 1}`}
-                  aria-current={i === current}
-                  className={`h-2 rounded-full transition-[width,background-color] duration-300 ease-snappy ${
-                    i === current ? "w-8 bg-rust" : "w-2 bg-gold/50 hover:bg-gold"
-                  }`}
-                />
-              ))}
-            </div>
+            <p className="shrink-0 tabular-nums" aria-live="off">
+              {current + 1} / {count}
+            </p>
           ) : null}
         </div>
       ) : null}

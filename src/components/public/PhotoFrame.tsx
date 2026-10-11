@@ -1,6 +1,6 @@
-// Affiche une photo en entier (object-contain) sur un fond flouté de la
-// même image : aucune zone rognée, et pas de bandes vides moches quand le
-// format de la photo ne correspond pas au cadre.
+// Affiche une photo en entier (object-contain) : aucune zone rognée. Quand
+// le format de la photo ne correspond pas au cadre, le fond uni de pierre
+// joue le rôle d'un passe-partout.
 export default function PhotoFrame({
   src,
   alt,
@@ -11,16 +11,9 @@ export default function PhotoFrame({
   className?: string;
 }) {
   return (
-    <div className={`relative overflow-hidden bg-cream-2 ${className}`}>
+    <div className={`bg-cream-2 ${className}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60 blur-2xl"
-      />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} className="relative h-full w-full object-contain" />
+      <img src={src} alt={alt} className="h-full w-full object-contain" />
     </div>
   );
 }

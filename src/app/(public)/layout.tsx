@@ -37,36 +37,29 @@ export default async function PublicLayout({ children }: { children: React.React
           : undefined
       }
     >
-      <header className="sticky top-0 z-40 border-b border-rust/15 bg-cream/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <Link href="/" className="group flex items-center gap-3">
+      <header className="border-t-8 border-moss-dark bg-cream">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5">
+          <Link href="/" className="flex items-center gap-4">
             {settings?.headerImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={settings.headerImageUrl} alt="" className="h-11 w-auto" />
-            ) : (
-              <span
-                aria-hidden="true"
-                className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-gold bg-gold-light/40 font-display text-lg text-rust-dark"
-              >
-                ✦
-              </span>
-            )}
-            <span className="font-display text-xl font-semibold leading-tight tracking-tight text-rust-dark transition-colors duration-150 ease-snappy group-hover:text-rust sm:text-2xl">
+              <img src={settings.headerImageUrl} alt="" className="h-12 w-auto" />
+            ) : null}
+            <span className="font-display text-2xl font-bold leading-tight text-moss-dark sm:text-3xl">
               {siteName}
             </span>
           </Link>
-          <div className="flex items-center gap-2 sm:gap-5">
-            <nav className="flex items-center gap-1 text-sm font-medium">
+          <div className="flex items-center gap-5">
+            <nav className="flex items-center gap-6 text-base">
               <Link
                 href="/"
-                className="rounded-full px-4 py-2 text-ink-soft transition-[background-color,color] duration-150 ease-snappy hover:bg-gold-light/40 hover:text-rust-dark"
+                className="underline-offset-8 transition-colors duration-150 hover:text-moss hover:underline"
               >
                 Nos visites
               </Link>
               {settings?.emailContact ? (
                 <a
                   href={`mailto:${settings.emailContact}`}
-                  className="hidden rounded-full border-2 border-rust px-4 py-1.5 text-rust transition-[background-color,color,transform] duration-150 ease-snappy hover:bg-rust hover:text-cream active:scale-95 sm:inline-block"
+                  className="hidden underline-offset-8 transition-colors duration-150 hover:text-moss hover:underline sm:inline"
                 >
                   Nous écrire
                 </a>
@@ -77,7 +70,9 @@ export default async function PublicLayout({ children }: { children: React.React
             ) : null}
           </div>
         </div>
-        <div className="h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="h-[3px] border-y border-ink/40" />
+        </div>
       </header>
 
       <HeaderCarousel photos={photos} />
@@ -90,22 +85,19 @@ export default async function PublicLayout({ children }: { children: React.React
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:py-14">{children}</main>
 
-      <footer className="mt-8 bg-ink text-cream/80">
-        <div className="h-1 bg-gradient-to-r from-rust via-gold to-rust" />
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-3">
-          <div className="space-y-3">
-            <p className="font-display text-2xl font-semibold text-cream">{siteName}</p>
-            <p className="text-sm leading-relaxed text-cream/60">
-              Des visites guidées théâtralisées pour redécouvrir le patrimoine autrement.
-            </p>
+      <footer className="border-t-8 border-moss-dark bg-ink text-cream/80">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-3">
+          <div className="space-y-2">
+            <p className="font-display text-xl font-bold text-cream">{siteName}</p>
+            <p className="text-sm text-cream/60">Visites guidées théâtralisées.</p>
           </div>
-          <div className="space-y-2 text-sm">
-            <p className="font-display text-base font-semibold text-gold-light">Contact</p>
+          <div className="space-y-1 text-sm">
+            <p className="font-display text-base font-bold text-straw">Contact</p>
             {settings?.emailContact ? (
               <p>
                 <a
                   href={`mailto:${settings.emailContact}`}
-                  className="transition-colors duration-150 hover:text-gold-light"
+                  className="underline-offset-4 transition-colors duration-150 hover:text-straw hover:underline"
                 >
                   {settings.emailContact}
                 </a>
@@ -116,16 +108,19 @@ export default async function PublicLayout({ children }: { children: React.React
               <p className="whitespace-pre-line text-cream/60">{settings.adresseSiege}</p>
             ) : null}
           </div>
-          <div className="space-y-2 text-sm">
-            <p className="font-display text-base font-semibold text-gold-light">Naviguer</p>
+          <div className="space-y-1 text-sm">
+            <p className="font-display text-base font-bold text-straw">Naviguer</p>
             <p>
-              <Link href="/" className="transition-colors duration-150 hover:text-gold-light">
+              <Link
+                href="/"
+                className="underline-offset-4 transition-colors duration-150 hover:text-straw hover:underline"
+              >
                 Nos visites
               </Link>
             </p>
           </div>
         </div>
-        <div className="border-t border-cream/10 py-4 text-center text-xs text-cream/50">
+        <div className="border-t border-cream/15 py-4 text-center text-xs text-cream/50">
           © {new Date().getFullYear()} {settings?.raisonSociale ?? siteName}
         </div>
       </footer>

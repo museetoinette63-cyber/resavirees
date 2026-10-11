@@ -1,24 +1,19 @@
 import type { Metadata } from "next";
-import { Fraunces, Geist, Geist_Mono } from "next/font/google";
+import { Libre_Caslon_Text, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Typographie de livre ancien : une Caslon (fonte d'imprimerie du XVIIIe)
+// pour les titres, associée à une sans-serif humaniste lisible pour le texte.
+const caslon = Libre_Caslon_Text({
+  variable: "--font-caslon",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// Serif d'affiche pour les titres — le ton "rétro" demandé, associé au
-// sans-serif moderne (Geist) pour le corps de texte.
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["400", "700"],
   style: ["normal", "italic"],
+});
+
+const sourceSans = Source_Sans_3({
+  variable: "--font-source-sans",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -28,10 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
-    >
+    <html lang="fr" className={`${sourceSans.variable} ${caslon.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-cream text-ink">{children}</body>
     </html>
   );

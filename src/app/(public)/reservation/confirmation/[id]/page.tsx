@@ -20,13 +20,10 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ i
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-6 rounded-lg border-2 border-border-warm bg-cream-2 p-8 text-center shadow-sm">
-      <div className="animate-scale-in mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gold-light text-xl text-rust-dark">
-        ✓
-      </div>
+    <div className="mx-auto max-w-xl space-y-6 border border-ink/30 border-t-8 border-t-moss-dark bg-cream-2 p-8">
       <h1
         style={{ animationDelay: "100ms" }}
-        className="animate-fade-in-up font-display text-2xl font-semibold tracking-tight text-rust-dark"
+        className="animate-fade-in-up font-display text-2xl font-semibold tracking-tight text-moss-dark"
       >
         Votre demande a bien été enregistrée
       </h1>
@@ -42,7 +39,7 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ i
       <Link
         href="/"
         style={{ animationDelay: "280ms" }}
-        className="animate-fade-in-up inline-block rounded-md bg-rust px-4 py-2 text-sm font-semibold text-cream transition-[background-color,transform] duration-150 ease-snappy hover:bg-rust-dark active:scale-[0.98]"
+        className="animate-fade-in-up inline-block rounded-sm bg-moss px-4 py-2 text-sm font-semibold text-cream transition-[background-color,transform] duration-150 ease-snappy hover:bg-moss-dark active:scale-[0.98]"
       >
         Retour à l&apos;accueil
       </Link>
