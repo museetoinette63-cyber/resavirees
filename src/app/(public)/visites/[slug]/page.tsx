@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatEuros } from "@/lib/formatMoney";
 import CalendrierMensuel from "@/components/public/CalendrierMensuel";
+import PhotoFrame from "@/components/public/PhotoFrame";
 
 // Créneau availability changes constantly — must always be rendered fresh,
 // never statically prerendered (see (public)/page.tsx for full rationale).
@@ -43,34 +44,32 @@ export default async function VisiteDetailPage({
       ) : null}
 
       {visite.imageBanniereUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <PhotoFrame
           src={visite.imageBanniereUrl}
           alt={visite.nom}
-          className="h-64 w-full rounded-lg object-cover"
+          className="aspect-[16/10] max-h-[70vh] w-full rounded-3xl border border-border-warm shadow-[0_24px_50px_-28px_rgba(46,33,24,0.55)] sm:aspect-[2/1]"
         />
       ) : null}
 
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-rust-dark">
+      <div className="max-w-3xl">
+        <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-rust-dark sm:text-5xl">
           {visite.nom}
         </h1>
-        <p className="mt-4 whitespace-pre-line text-ink-soft">{visite.description}</p>
-      </div>
-
-      <div className="flex flex-wrap gap-4 rounded-lg border-2 border-border-warm bg-cream-2 p-4 text-sm">
-        <p className="text-ink-soft">
-          <span className="font-medium text-ink">Tarif adulte :</span>{" "}
-          {formatEuros(visite.tarifAdulte)}
-        </p>
-        <p className="text-ink-soft">
-          <span className="font-medium text-ink">Tarif enfant :</span>{" "}
-          {formatEuros(visite.tarifEnfant)}
+        <div className="mt-5 flex flex-wrap gap-2 text-sm font-semibold">
+          <span className="rounded-full bg-gold-light/50 px-4 py-1.5 text-rust-dark">
+            Adulte {formatEuros(visite.tarifAdulte)}
+          </span>
+          <span className="rounded-full bg-gold-light/50 px-4 py-1.5 text-rust-dark">
+            Enfant {formatEuros(visite.tarifEnfant)}
+          </span>
+        </div>
+        <p className="mt-6 whitespace-pre-line text-lg leading-relaxed text-ink-soft">
+          {visite.description}
         </p>
       </div>
 
       <section>
-        <h2 className="mb-4 font-display text-xl font-semibold text-rust-dark">
+        <h2 className="mb-5 font-display text-3xl font-semibold tracking-tight text-rust-dark">
           Choisissez une date
         </h2>
         {creneauxSerialises.length > 0 ? (
