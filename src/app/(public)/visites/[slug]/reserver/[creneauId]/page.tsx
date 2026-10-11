@@ -66,11 +66,11 @@ export default async function ReserverPage({
       <div>
         <Link
           href={`/visites/${slug}`}
-          className="text-sm text-ink-soft transition-colors duration-150 ease-snappy hover:text-moss"
+          className="text-sm text-ink-soft transition-colors duration-150 ease-snappy hover:text-wine"
         >
           ← Retour à la visite
         </Link>
-        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-moss-dark">
+        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-wine-dark">
           Réserver : {visite.nom}
         </h1>
         <p className="mt-1 text-ink-soft">{formatDateTimeParis(creneau.dateHeure)}</p>

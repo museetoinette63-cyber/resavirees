@@ -39,7 +39,7 @@ export default function SoundToggle({
         aria-pressed={playing}
         title={label}
         aria-label={playing ? `Couper ${label}` : `Activer ${label}`}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-ink/40 text-moss-dark transition-[background-color,transform] duration-150 ease-snappy hover:bg-straw/30 active:scale-90"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[3px] border-double border-ochre bg-cream text-wine-dark transition-[background-color,transform] duration-150 ease-snappy hover:bg-straw/50 active:scale-90"
       >
         {playing ? (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">

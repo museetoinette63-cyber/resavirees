@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import HeaderCarousel from "@/components/public/HeaderCarousel";
 import SoundToggle from "@/components/public/SoundToggle";
 import BlocsContenu from "@/components/public/BlocsContenu";
+import { Fleuron } from "@/components/public/Ornaments";
 
 // Reads SiteSettings directly — admin can change header/background at any
 // time, and this must never be statically prerendered (see (public)/page.tsx
@@ -10,6 +11,8 @@ import BlocsContenu from "@/components/public/BlocsContenu";
 // reasoning applies to the carrousel photos and BlocContenu entries fetched
 // below: both are admin-editable and must reflect changes immediately.
 export const dynamic = "force-dynamic";
+
+const NOM_PAR_DEFAUT = "Visites guidées théâtralisées";
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const [settings, photos, blocs] = await Promise.all([
@@ -26,52 +29,52 @@ export default async function PublicLayout({ children }: { children: React.React
     }),
   ]);
 
-  const siteName = settings?.siteName ?? "Visites guidées théâtralisées";
+  const siteName = settings?.siteName ?? NOM_PAR_DEFAUT;
+  const lienNav =
+    "underline-offset-[10px] transition-colors duration-150 hover:text-wine hover:underline decoration-ochre decoration-2";
 
   return (
     <div
-      className="flex min-h-full flex-1 flex-col bg-cover bg-center bg-fixed"
+      className="flex min-h-full flex-1 flex-col bg-cover bg-center bg-fixed font-body text-[1.2rem]"
       style={
         settings?.backgroundImageUrl
           ? { backgroundImage: `url(${settings.backgroundImageUrl})` }
           : undefined
       }
     >
-      <header className="border-t-8 border-moss-dark bg-cream">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5">
-          <Link href="/" className="flex items-center gap-4">
-            {settings?.headerImageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={settings.headerImageUrl} alt="" className="h-12 w-auto" />
-            ) : null}
-            <span className="font-display text-2xl font-bold leading-tight text-moss-dark sm:text-3xl">
+      <header>
+        <div className="frise-arcature" aria-hidden="true" />
+        <div className="mx-auto max-w-6xl px-4 pb-5 pt-9 text-center">
+          {settings?.headerImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={settings.headerImageUrl} alt="" className="mx-auto mb-4 h-20 w-auto" />
+          ) : null}
+          <Link href="/" className="inline-block">
+            <span className="font-title text-3xl font-black leading-tight text-wine-dark sm:text-5xl">
               {siteName}
             </span>
           </Link>
-          <div className="flex items-center gap-5">
-            <nav className="flex items-center gap-6 text-base">
-              <Link
-                href="/"
-                className="underline-offset-8 transition-colors duration-150 hover:text-moss hover:underline"
-              >
-                Nos visites
-              </Link>
-              {settings?.emailContact ? (
-                <a
-                  href={`mailto:${settings.emailContact}`}
-                  className="hidden underline-offset-8 transition-colors duration-150 hover:text-moss hover:underline sm:inline"
-                >
+          <Fleuron className="mx-auto mt-4 h-6 w-64 text-ochre" />
+        </div>
+        <div className="border-y-[3px] border-double border-ochre bg-cream-2/60">
+          <div className="relative mx-auto flex max-w-6xl items-center justify-center gap-6 px-4 py-3 font-display text-base uppercase tracking-[0.25em] sm:gap-8">
+            <Link href="/" className={lienNav}>
+              Nos visites
+            </Link>
+            {settings?.emailContact ? (
+              <>
+                <span aria-hidden="true" className="h-2 w-2 rotate-45 bg-ochre" />
+                <a href={`mailto:${settings.emailContact}`} className={lienNav}>
                   Nous écrire
                 </a>
-              ) : null}
-            </nav>
+              </>
+            ) : null}
             {settings?.sonAmbianceUrl ? (
-              <SoundToggle url={settings.sonAmbianceUrl} nom={settings.sonAmbianceNom} />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                <SoundToggle url={settings.sonAmbianceUrl} nom={settings.sonAmbianceNom} />
+              </div>
             ) : null}
           </div>
-        </div>
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="h-[3px] border-y border-ink/40" />
         </div>
       </header>
 
@@ -83,44 +86,48 @@ export default async function PublicLayout({ children }: { children: React.React
         </div>
       ) : null}
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:py-14">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-12 sm:py-16">{children}</main>
 
-      <footer className="border-t-8 border-moss-dark bg-ink text-cream/80">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-3">
-          <div className="space-y-2">
-            <p className="font-display text-xl font-bold text-cream">{siteName}</p>
-            <p className="text-sm text-cream/60">Visites guidées théâtralisées.</p>
-          </div>
-          <div className="space-y-1 text-sm">
-            <p className="font-display text-base font-bold text-straw">Contact</p>
-            {settings?.emailContact ? (
+      <footer className="mt-10 bg-wine-dark text-cream/85">
+        <div className="frise-arcature" aria-hidden="true" />
+        <div className="mx-auto max-w-6xl px-4 py-12 text-center">
+          <Fleuron className="mx-auto h-6 w-64 text-straw" />
+          <p className="mt-4 font-title text-2xl font-bold text-straw sm:text-3xl">{siteName}</p>
+          <div className="mt-8 grid gap-8 text-lg sm:grid-cols-3">
+            <div className="space-y-1">
+              <p className="font-display text-xl text-straw">Contact</p>
+              {settings?.emailContact ? (
+                <p>
+                  <a
+                    href={`mailto:${settings.emailContact}`}
+                    className="underline-offset-4 transition-colors duration-150 hover:text-straw hover:underline"
+                  >
+                    {settings.emailContact}
+                  </a>
+                </p>
+              ) : null}
+              {settings?.telephoneContact ? <p>{settings.telephoneContact}</p> : null}
+            </div>
+            <div className="space-y-1">
+              <p className="font-display text-xl text-straw">Adresse</p>
+              {settings?.adresseSiege ? (
+                <p className="whitespace-pre-line text-cream/70">{settings.adresseSiege}</p>
+              ) : null}
+            </div>
+            <div className="space-y-1">
+              <p className="font-display text-xl text-straw">Naviguer</p>
               <p>
-                <a
-                  href={`mailto:${settings.emailContact}`}
+                <Link
+                  href="/"
                   className="underline-offset-4 transition-colors duration-150 hover:text-straw hover:underline"
                 >
-                  {settings.emailContact}
-                </a>
+                  Nos visites
+                </Link>
               </p>
-            ) : null}
-            {settings?.telephoneContact ? <p>{settings.telephoneContact}</p> : null}
-            {settings?.adresseSiege ? (
-              <p className="whitespace-pre-line text-cream/60">{settings.adresseSiege}</p>
-            ) : null}
-          </div>
-          <div className="space-y-1 text-sm">
-            <p className="font-display text-base font-bold text-straw">Naviguer</p>
-            <p>
-              <Link
-                href="/"
-                className="underline-offset-4 transition-colors duration-150 hover:text-straw hover:underline"
-              >
-                Nos visites
-              </Link>
-            </p>
+            </div>
           </div>
         </div>
-        <div className="border-t border-cream/15 py-4 text-center text-xs text-cream/50">
+        <div className="border-t border-straw/25 py-4 text-center text-sm text-cream/55">
           © {new Date().getFullYear()} {settings?.raisonSociale ?? siteName}
         </div>
       </footer>

@@ -1,25 +1,27 @@
 @import "tailwindcss";
 
 /*
- * Palette "pierre et lichen" : calcaire clair en fond, basalte pour le
- * texte (clin d'œil à la pierre de lave auvergnate), vert lichen comme
- * couleur d'action, ocre fané en accent, brique réservée aux erreurs.
- * Typographie de livre ancien : Libre Caslon (titres) + Source Sans (texte).
+ * Palette "manuscrit enluminé" : parchemin pour le fond, brun d'encre pour
+ * le texte, bordeaux profond comme couleur d'action, or terni pour les
+ * filets et ornements, vert forêt en contrepoint, brique réservée aux
+ * erreurs. Typographie d'imprimerie ancienne (Cinzel Decorative, IM Fell,
+ * EB Garamond) ; le back-office garde Source Sans pour rester lisible.
  */
 :root {
-  --background: #ece6d6;
-  --foreground: #26231f;
+  --background: #efe2bf;
+  --foreground: #2a1c12;
 
-  --color-cream: #ece6d6;
-  --color-cream-2: #e1d9c4;
-  --color-ink: #26231f;
-  --color-ink-soft: #5a554a;
-  --color-moss: #4d6340;
-  --color-moss-dark: #34482b;
-  --color-ochre: #9a7b2f;
-  --color-straw: #d6c994;
-  --color-border-stone: #c4baa0;
-  --color-brick: #9b3d2a;
+  --color-cream: #f1e5c4;
+  --color-cream-2: #e4d2a2;
+  --color-ink: #2a1c12;
+  --color-ink-soft: #5a4531;
+  --color-wine: #7a2430;
+  --color-wine-dark: #4f141d;
+  --color-ochre: #a67c2a;
+  --color-straw: #e3cd85;
+  --color-forest: #2f4a35;
+  --color-border-stone: #b59b62;
+  --color-brick: #b3261e;
 }
 
 @theme inline {
@@ -29,14 +31,17 @@
   --color-cream-2: var(--color-cream-2);
   --color-ink: var(--color-ink);
   --color-ink-soft: var(--color-ink-soft);
-  --color-moss: var(--color-moss);
-  --color-moss-dark: var(--color-moss-dark);
+  --color-wine: var(--color-wine);
+  --color-wine-dark: var(--color-wine-dark);
   --color-ochre: var(--color-ochre);
   --color-straw: var(--color-straw);
+  --color-forest: var(--color-forest);
   --color-border-stone: var(--color-border-stone);
   --color-brick: var(--color-brick);
   --font-sans: var(--font-source-sans);
-  --font-display: var(--font-caslon);
+  --font-title: var(--font-cinzel);
+  --font-display: var(--font-fell);
+  --font-body: var(--font-garamond);
 
   /* Motion : courbes fortes (les easings CSS natifs manquent de "punch") —
      ease-snappy pour les interactions (hover/press/apparitions), ease-fluid
@@ -70,16 +75,35 @@
   }
 }
 
+/* Vieux papier : taches de vieillissement très douces + grain fin, avec
+   les bords du parchemin légèrement assombris. */
 body {
   background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(110, 70, 25, 0.22) 100%),
+    radial-gradient(circle at 12% 18%, rgba(150, 105, 45, 0.12), transparent 32%),
+    radial-gradient(circle at 88% 38%, rgba(150, 105, 45, 0.1), transparent 36%),
+    radial-gradient(circle at 20% 72%, rgba(150, 105, 45, 0.1), transparent 34%),
+    radial-gradient(circle at 80% 92%, rgba(150, 105, 45, 0.12), transparent 30%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0 0.1  0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23b)'/></svg>");
+  background-attachment: fixed, scroll, scroll, scroll, scroll, scroll;
   color: var(--foreground);
-  font-size: 1.0625rem;
   line-height: 1.6;
 }
 
 ::selection {
   background: var(--color-straw);
   color: var(--color-ink);
+}
+
+/* Frise d'arcatures romanes (petites arcades à plein cintre) : bandeau
+   décoratif en haut de l'en-tête et du pied de page. */
+.frise-arcature {
+  height: 20px;
+  background-color: #4f141d;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='20' viewBox='0 0 24 20'><path d='M2 20V11A10 10 0 0 1 22 11V20' fill='none' stroke='%23c9a24a' stroke-width='1.5'/><circle cx='12' cy='3.2' r='1.5' fill='%23c9a24a'/></svg>");
+  background-size: 24px 20px;
+  background-repeat: repeat-x;
 }
 
 /* Le mouvement reste perceptible (comprehension) mais jamais vestibulaire :

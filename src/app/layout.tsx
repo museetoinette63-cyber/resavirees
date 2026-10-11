@@ -1,13 +1,26 @@
 import type { Metadata } from "next";
-import { Libre_Caslon_Text, Source_Sans_3 } from "next/font/google";
+import { Cinzel_Decorative, EB_Garamond, IM_Fell_English, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 
-// Typographie de livre ancien : une Caslon (fonte d'imprimerie du XVIIIe)
-// pour les titres, associée à une sans-serif humaniste lisible pour le texte.
-const caslon = Libre_Caslon_Text({
-  variable: "--font-caslon",
+// Typographie d'imprimerie ancienne : Cinzel Decorative (lettrines et
+// titres monumentaux), IM Fell (titres, gravée à l'ancienne), EB Garamond
+// (texte courant). Source Sans reste utilisé par le back-office.
+const cinzel = Cinzel_Decorative({
+  variable: "--font-cinzel",
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "700", "900"],
+});
+
+const fell = IM_Fell_English({
+  variable: "--font-fell",
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+});
+
+const garamond = EB_Garamond({
+  variable: "--font-garamond",
+  subsets: ["latin"],
   style: ["normal", "italic"],
 });
 
@@ -23,7 +36,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${sourceSans.variable} ${caslon.variable} h-full antialiased`}>
+    <html
+      lang="fr"
+      className={`${sourceSans.variable} ${cinzel.variable} ${fell.variable} ${garamond.variable} h-full antialiased`}
+    >
       <body className="min-h-full flex flex-col bg-cream text-ink">{children}</body>
     </html>
   );

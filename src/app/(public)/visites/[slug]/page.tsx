@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { formatEuros } from "@/lib/formatMoney";
 import CalendrierMensuel from "@/components/public/CalendrierMensuel";
 import PhotoFrame from "@/components/public/PhotoFrame";
+import { CadreOrne, Fleuron } from "@/components/public/Ornaments";
 
 // Créneau availability changes constantly — must always be rendered fresh,
 // never statically prerendered (see (public)/page.tsx for full rationale).
@@ -35,52 +36,61 @@ export default async function VisiteDetailPage({
   }));
 
   return (
-    <article className="space-y-8">
+    <article className="space-y-14">
       {indisponible ? (
-        <p className="rounded-sm border-2 border-ochre bg-straw/30 px-4 py-3 text-sm text-moss-dark">
+        <p className="border-[3px] border-double border-ochre bg-straw/40 px-4 py-3 text-center text-wine-dark">
           Ce créneau vient d&apos;être réservé par quelqu&apos;un d&apos;autre. Merci d&apos;en choisir un
           nouveau ci-dessous.
         </p>
       ) : null}
 
       {visite.imageBanniereUrl ? (
-        <PhotoFrame
-          src={visite.imageBanniereUrl}
-          alt={visite.nom}
-          className="aspect-[16/10] max-h-[70vh] w-full border border-ink/30 sm:aspect-[2/1]"
-        />
+        <CadreOrne className="bg-cream-2/70">
+          <PhotoFrame
+            src={visite.imageBanniereUrl}
+            alt={visite.nom}
+            className="aspect-[16/10] max-h-[70vh] w-full border-2 border-wine-dark sm:aspect-[2/1]"
+          />
+        </CadreOrne>
       ) : null}
 
-      <div className="grid gap-8 md:grid-cols-[2fr_1fr]">
-        <div>
-          <h1 className="font-display text-4xl font-bold leading-tight text-moss-dark md:text-5xl">
-            {visite.nom}
-          </h1>
-          <p className="mt-6 whitespace-pre-line text-lg text-ink-soft">{visite.description}</p>
-        </div>
-        <dl className="h-fit space-y-2 border-t-4 border-moss-dark bg-cream-2 p-5 text-base">
-          <div className="flex items-baseline gap-2">
-            <dt>Adulte</dt>
-            <span className="flex-1 border-b border-dotted border-ink/40" aria-hidden="true" />
-            <dd className="font-semibold tabular-nums">{formatEuros(visite.tarifAdulte)}</dd>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <dt>Enfant</dt>
-            <span className="flex-1 border-b border-dotted border-ink/40" aria-hidden="true" />
-            <dd className="font-semibold tabular-nums">{formatEuros(visite.tarifEnfant)}</dd>
-          </div>
-        </dl>
+      <header className="text-center">
+        <h1 className="font-title text-4xl font-black leading-tight text-wine-dark md:text-6xl">
+          {visite.nom}
+        </h1>
+        <Fleuron className="mx-auto mt-4 h-6 w-64 text-ochre" />
+      </header>
+
+      <div className="grid gap-10 md:grid-cols-[2fr_1fr]">
+        <p className="whitespace-pre-line text-xl leading-relaxed text-ink-soft first-letter:float-left first-letter:mr-3 first-letter:font-title first-letter:text-7xl first-letter:font-black first-letter:leading-[0.85] first-letter:text-wine">
+          {visite.description}
+        </p>
+        <CadreOrne size="sm" className="h-fit bg-cream/70">
+          <p className="mb-3 text-center font-display text-2xl text-wine-dark">Tarifs</p>
+          <dl className="space-y-2 text-lg">
+            <div className="flex items-baseline gap-2">
+              <dt>Adulte</dt>
+              <span className="flex-1 border-b-2 border-dotted border-ochre/60" aria-hidden="true" />
+              <dd className="font-semibold tabular-nums">{formatEuros(visite.tarifAdulte)}</dd>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <dt>Enfant</dt>
+              <span className="flex-1 border-b-2 border-dotted border-ochre/60" aria-hidden="true" />
+              <dd className="font-semibold tabular-nums">{formatEuros(visite.tarifEnfant)}</dd>
+            </div>
+          </dl>
+        </CadreOrne>
       </div>
 
-      <section>
-        <h2 className="mb-5 flex items-center gap-4 font-display text-2xl font-bold text-moss-dark">
-          <span>Choisissez une date</span>
-          <span className="h-px flex-1 bg-ink/30" aria-hidden="true" />
-        </h2>
+      <section className="space-y-8">
+        <div className="text-center">
+          <h2 className="font-display text-4xl text-wine-dark">Choisissez une date</h2>
+          <Fleuron className="mx-auto mt-2 h-6 w-56 text-ochre" />
+        </div>
         {creneauxSerialises.length > 0 ? (
           <CalendrierMensuel visiteSlug={visite.slug} creneaux={creneauxSerialises} />
         ) : (
-          <p className="rounded-sm border-2 border-border-stone bg-cream-2 p-6 text-center text-ink-soft">
+          <p className="border-[3px] border-double border-ochre bg-cream-2/70 p-6 text-center text-ink-soft">
             Aucun créneau n&apos;est disponible pour le moment. Revenez bientôt !
           </p>
         )}

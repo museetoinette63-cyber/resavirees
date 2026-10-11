@@ -1,6 +1,6 @@
-// Affiche une photo en entier (object-contain) : aucune zone rognée. Quand
-// le format de la photo ne correspond pas au cadre, le fond uni de pierre
-// joue le rôle d'un passe-partout.
+// Affiche une photo en entier (object-contain) sur un fond sombre de
+// passe-partout : aucune zone rognée. `className` règle le format et la
+// forme (ex. `rounded-t-full` pour une arcade).
 export default function PhotoFrame({
   src,
   alt,
@@ -11,7 +11,7 @@ export default function PhotoFrame({
   className?: string;
 }) {
   return (
-    <div className={`bg-cream-2 ${className}`}>
+    <div className={`overflow-hidden bg-ink ${className}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt={alt} className="h-full w-full object-contain" />
     </div>

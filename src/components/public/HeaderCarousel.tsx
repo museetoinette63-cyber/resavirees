@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { CadreOrne, Fleuron, romain } from "@/components/public/Ornaments";
 
 export type CarouselPhoto = {
   id: string;
@@ -11,10 +12,10 @@ export type CarouselPhoto = {
 
 const ROTATE_MS = 6500;
 
-// Diaporama d'en-tête présenté comme un tirage encadré : chaque photo est
-// affichée EN ENTIER (object-contain) sur fond sombre, jamais rognée. Grand
-// format sur l'accueil, plus compact ailleurs. Défilement automatique, pause
-// au survol, flèches, compteur et balayage tactile.
+// Diaporama d'en-tête présenté comme une gravure encadrée : chaque photo
+// est affichée EN ENTIER (object-contain) sur fond sombre, jamais rognée.
+// Grand format sur l'accueil, plus compact ailleurs. Défilement automatique,
+// pause au survol, flèches, numérotation romaine et balayage tactile.
 export default function HeaderCarousel({ photos }: { photos: CarouselPhoto[] }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
@@ -36,20 +37,23 @@ export default function HeaderCarousel({ photos }: { photos: CarouselPhoto[] }) 
   const go = (next: number) => setIndex(((next % count) + count) % count);
   const legende = photos[current].legende;
 
+  const flecheClass =
+    "absolute top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center border-2 border-ochre bg-wine-dark/90 text-2xl leading-none text-straw transition-[background-color,transform] duration-150 ease-snappy hover:bg-wine active:scale-90";
+
   return (
     <section
       aria-roledescription="carrousel"
       aria-label="Photos"
-      className="mx-auto w-full max-w-6xl px-4 pt-8"
+      className="mx-auto w-full max-w-6xl px-4 pt-10"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="border border-ink/30 bg-cream-2 p-2 sm:p-3">
+      <CadreOrne className="bg-cream-2/70">
         <div
-          className={`relative w-full overflow-hidden bg-ink ${
+          className={`relative w-full overflow-hidden border-2 border-wine-dark bg-ink ${
             isHome
               ? "aspect-[4/3] max-h-[78vh] sm:aspect-[16/9] lg:aspect-[2/1]"
-              : "aspect-[16/10] sm:aspect-[3/1]"
+              : "aspect-[16/10] max-h-[60vh] sm:aspect-[5/2]"
           }`}
           onTouchStart={(e) => {
             touchStartX.current = e.touches[0].clientX;
@@ -80,7 +84,7 @@ export default function HeaderCarousel({ photos }: { photos: CarouselPhoto[] }) 
                 type="button"
                 onClick={() => go(current - 1)}
                 aria-label="Photo précédente"
-                className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-ink/70 text-2xl leading-none text-cream transition-[background-color,transform] duration-150 ease-snappy hover:bg-ink active:scale-90"
+                className={`${flecheClass} left-2`}
               >
                 ‹
               </button>
@@ -88,22 +92,25 @@ export default function HeaderCarousel({ photos }: { photos: CarouselPhoto[] }) 
                 type="button"
                 onClick={() => go(current + 1)}
                 aria-label="Photo suivante"
-                className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-ink/70 text-2xl leading-none text-cream transition-[background-color,transform] duration-150 ease-snappy hover:bg-ink active:scale-90"
+                className={`${flecheClass} right-2`}
               >
                 ›
               </button>
             </>
           ) : null}
         </div>
-      </div>
+      </CadreOrne>
 
       {count > 1 || legende ? (
-        <div className="mt-3 flex items-baseline justify-between gap-4 text-sm text-ink-soft">
-          <p className="font-display italic">{legende ?? ""}</p>
+        <div className="mt-5 flex flex-col items-center gap-2 text-center">
+          {legende ? <p className="font-display text-2xl italic text-wine-dark">{legende}</p> : null}
           {count > 1 ? (
-            <p className="shrink-0 tabular-nums" aria-live="off">
-              {current + 1} / {count}
-            </p>
+            <>
+              <Fleuron className="h-5 w-44 text-ochre" />
+              <p className="font-title text-sm font-bold tracking-[0.3em] text-ochre" aria-label={`Photo ${current + 1} sur ${count}`}>
+                {romain(current + 1)} · {romain(count)}
+              </p>
+            </>
           ) : null}
         </div>
       ) : null}

@@ -30,7 +30,7 @@ function BlocContenuItem({ bloc }: { bloc: BlocContenuData }) {
     return (
       <section className="rounded-sm border-2 border-ochre bg-straw/30 p-5">
         {bloc.titre ? (
-          <h2 className="font-display text-lg font-semibold text-moss-dark">{bloc.titre}</h2>
+          <h2 className="font-display text-lg font-semibold text-wine-dark">{bloc.titre}</h2>
         ) : null}
         <p className="mt-1 whitespace-pre-wrap text-ink">{bloc.contenu}</p>
       </section>
@@ -39,7 +39,7 @@ function BlocContenuItem({ bloc }: { bloc: BlocContenuData }) {
 
   if (bloc.type === "TEXTE_IMAGE") {
     return (
-      <section className="flex flex-col gap-6 rounded-sm border-2 border-border-stone bg-cream-2 p-5 sm:flex-row sm:items-center">
+      <section className="flex flex-col gap-6 rounded-sm border-[3px] border-double border-ochre bg-cream-2 p-5 sm:flex-row sm:items-center">
         {bloc.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -50,7 +50,7 @@ function BlocContenuItem({ bloc }: { bloc: BlocContenuData }) {
         ) : null}
         <div className="space-y-2 sm:flex-1">
           {bloc.titre ? (
-            <h2 className="font-display text-xl font-semibold text-moss-dark">{bloc.titre}</h2>
+            <h2 className="font-display text-xl font-semibold text-wine-dark">{bloc.titre}</h2>
           ) : null}
           <p className="whitespace-pre-wrap text-ink-soft">{bloc.contenu}</p>
         </div>
@@ -61,7 +61,7 @@ function BlocContenuItem({ bloc }: { bloc: BlocContenuData }) {
   return (
     <section className="space-y-2">
       {bloc.titre ? (
-        <h2 className="font-display text-xl font-semibold text-moss-dark">{bloc.titre}</h2>
+        <h2 className="font-display text-xl font-semibold text-wine-dark">{bloc.titre}</h2>
       ) : null}
       <p className="whitespace-pre-wrap text-ink-soft">{bloc.contenu}</p>
     </section>

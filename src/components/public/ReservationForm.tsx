@@ -132,7 +132,7 @@ export default function ReservationForm({ creneauId, pricingConfig }: Reservatio
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-sm border-2 border-border-stone bg-cream-2 p-6"
+      className="space-y-4 rounded-sm border-[3px] border-double border-ochre bg-cream-2 p-6"
     >
       {formError ? (
         <p className="rounded-sm border-2 border-brick bg-brick/10 px-3 py-2 text-sm text-brick">
@@ -148,7 +148,7 @@ export default function ReservationForm({ creneauId, pricingConfig }: Reservatio
           id="nomOuRaisonSociale"
           value={form.nomOuRaisonSociale}
           onChange={(e) => handleChange("nomOuRaisonSociale", e.target.value)}
-          className="w-full rounded-sm border-2 border-border-stone bg-cream px-3 py-2 text-sm transition-colors duration-150 ease-snappy focus:border-moss focus:outline-none"
+          className="w-full rounded-sm border-[3px] border-double border-ochre bg-cream px-3 py-2 text-sm transition-colors duration-150 ease-snappy focus:border-wine focus:outline-none"
         />
         {fieldErrors.nomOuRaisonSociale ? (
           <p className="text-xs text-brick">{fieldErrors.nomOuRaisonSociale}</p>
@@ -164,7 +164,7 @@ export default function ReservationForm({ creneauId, pricingConfig }: Reservatio
           type="tel"
           value={form.telephone}
           onChange={(e) => handleChange("telephone", e.target.value)}
-          className="w-full rounded-sm border-2 border-border-stone bg-cream px-3 py-2 text-sm transition-colors duration-150 ease-snappy focus:border-moss focus:outline-none"
+          className="w-full rounded-sm border-[3px] border-double border-ochre bg-cream px-3 py-2 text-sm transition-colors duration-150 ease-snappy focus:border-wine focus:outline-none"
         />
         {fieldErrors.telephone ? <p className="text-xs text-brick">{fieldErrors.telephone}</p> : null}
       </div>
@@ -178,7 +178,7 @@ export default function ReservationForm({ creneauId, pricingConfig }: Reservatio
           type="email"
           value={form.email}
           onChange={(e) => handleChange("email", e.target.value)}
-          className="w-full rounded-sm border-2 border-border-stone bg-cream px-3 py-2 text-sm transition-colors duration-150 ease-snappy focus:border-moss focus:outline-none"
+          className="w-full rounded-sm border-[3px] border-double border-ochre bg-cream px-3 py-2 text-sm transition-colors duration-150 ease-snappy focus:border-wine focus:outline-none"
         />
         {fieldErrors.email ? <p className="text-xs text-brick">{fieldErrors.email}</p> : null}
       </div>
@@ -192,7 +192,7 @@ export default function ReservationForm({ creneauId, pricingConfig }: Reservatio
           value={form.adressePostale}
           onChange={(e) => handleChange("adressePostale", e.target.value)}
           rows={2}
-          className="w-full rounded-sm border-2 border-border-stone bg-cream px-3 py-2 text-sm transition-colors duration-150 ease-snappy focus:border-moss focus:outline-none"
+          className="w-full rounded-sm border-[3px] border-double border-ochre bg-cream px-3 py-2 text-sm transition-colors duration-150 ease-snappy focus:border-wine focus:outline-none"
         />
         {fieldErrors.adressePostale ? (
           <p className="text-xs text-brick">{fieldErrors.adressePostale}</p>
@@ -210,7 +210,7 @@ export default function ReservationForm({ creneauId, pricingConfig }: Reservatio
             min={0}
             value={form.nbAdultes}
             onChange={(e) => handleChange("nbAdultes", e.target.value)}
-            className="w-full rounded-sm border-2 border-border-stone bg-cream px-3 py-2 text-sm transition-colors duration-150 ease-snappy focus:border-moss focus:outline-none"
+            className="w-full rounded-sm border-[3px] border-double border-ochre bg-cream px-3 py-2 text-sm transition-colors duration-150 ease-snappy focus:border-wine focus:outline-none"
           />
         </div>
         <div className="space-y-1">
@@ -223,7 +223,7 @@ export default function ReservationForm({ creneauId, pricingConfig }: Reservatio
             min={0}
             value={form.nbEnfants}
             onChange={(e) => handleChange("nbEnfants", e.target.value)}
-            className="w-full rounded-sm border-2 border-border-stone bg-cream px-3 py-2 text-sm transition-colors duration-150 ease-snappy focus:border-moss focus:outline-none"
+            className="w-full rounded-sm border-[3px] border-double border-ochre bg-cream px-3 py-2 text-sm transition-colors duration-150 ease-snappy focus:border-wine focus:outline-none"
           />
         </div>
       </div>
@@ -233,7 +233,7 @@ export default function ReservationForm({ creneauId, pricingConfig }: Reservatio
         <div className="animate-scale-in space-y-2 rounded-sm border-2 border-ochre bg-straw/25 p-4">
           <div className="flex items-baseline justify-between">
             <span className="text-sm font-medium text-ink">Prix estimé</span>
-            <span className="font-display text-2xl font-semibold text-moss-dark">
+            <span className="font-display text-2xl font-semibold text-wine-dark">
               {formatCentsEuros(apercu.montantTotal)}
             </span>
           </div>
@@ -258,7 +258,7 @@ export default function ReservationForm({ creneauId, pricingConfig }: Reservatio
       <button
         type="submit"
         disabled={submitting}
-        className="w-full rounded-sm bg-moss px-4 py-2.5 text-sm font-semibold text-cream transition-[background-color,transform] duration-150 ease-snappy hover:bg-moss-dark active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+        className="w-full rounded-sm bg-wine px-4 py-2.5 text-sm font-semibold text-cream transition-[background-color,transform] duration-150 ease-snappy hover:bg-wine-dark active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
       >
         {submitting ? "Envoi en cours…" : "Confirmer la réservation"}
       </button>
