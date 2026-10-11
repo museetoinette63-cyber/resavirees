@@ -7,6 +7,7 @@
  */
 
 import nodemailer, { type Transporter } from "nodemailer";
+import { prisma } from "@/lib/prisma";
 
 export interface MailAttachment {
   filename: string;
@@ -46,11 +47,27 @@ function getTransporter(): Transporter {
 export async function sendMail({ to, subject, html, attachments }: SendMailParams): Promise<void> {
   const transporter = getTransporter();
 
+  // Logo de l'association (Paramètres) en tête de chaque e-mail. Une
+  // lecture en échec ne doit jamais empêcher l'envoi du message lui-même.
+  let logoUrl: string | null = null;
+  try {
+    const settings = await prisma.siteSettings.findUnique({
+      where: { id: 1 },
+      select: { logoUrl: true },
+    });
+    logoUrl = settings?.logoUrl ?? null;
+  } catch {
+    logoUrl = null;
+  }
+  const enTete = logoUrl
+    ? `<div style="text-align: center; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #e5e5e5;"><img src="${logoUrl}" alt="Logo" style="max-height: 80px; max-width: 260px;" /></div>`
+    : "";
+
   await transporter.sendMail({
     from: process.env.SMTP_FROM,
     to,
     subject,
-    html,
+    html: enTete ? `<div style="max-width: 600px; margin: 0 auto;">${enTete}${html}</div>` : html,
     attachments: attachments?.map((attachment) => ({
       filename: attachment.filename,
       content: attachment.content,

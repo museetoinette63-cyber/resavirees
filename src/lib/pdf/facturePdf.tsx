@@ -9,6 +9,7 @@
 import { Document, Page, View, Text, renderToBuffer } from "@react-pdf/renderer";
 import type { Prisma, SiteSettings } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { calculerSolde } from "@/lib/facturation/solde";
 import {
   sharedStyles,
   formatEuros,
@@ -55,6 +56,7 @@ function FactureDocument({
   const dureeMinutes = facture.devis.dureeMinutes ?? null;
 
   const lignesTriees = [...facture.lignes].sort((a, b) => a.ordre - b.ordre);
+  const solde = calculerSolde(facture, facture.devis);
 
   const dateEmission = facture.envoyeeLe ?? facture.createdAt;
 
@@ -94,13 +96,35 @@ function FactureDocument({
             <Text style={sharedStyles.totalsLabel}>TVA</Text>
             <Text style={sharedStyles.totalsValue}>0 % (association non assujettie)</Text>
           </View>
-          <View style={sharedStyles.grandTotalRow}>
-            <Text style={sharedStyles.grandTotalLabel}>Montant total</Text>
-            <Text style={sharedStyles.grandTotalValue}>{formatEuros(facture.montantFinal)}</Text>
-          </View>
           <View style={sharedStyles.totalsRow}>
-            <Text style={sharedStyles.totalsLabel}>Montant du solde restant dû</Text>
+            <Text style={sharedStyles.totalsLabel}>Montant total</Text>
             <Text style={sharedStyles.totalsValue}>{formatEuros(facture.montantFinal)}</Text>
+          </View>
+          {solde.acomptePrevu > 0 ? (
+            <View style={sharedStyles.totalsRow}>
+              <Text style={sharedStyles.totalsLabel}>
+                {solde.acompteRegle > 0
+                  ? `Acompte déjà réglé${
+                      facture.devis.acompteDateReglement
+                        ? ` le ${formatDateParis(facture.devis.acompteDateReglement)}`
+                        : ""
+                    }${
+                      facture.devis.acompteReferenceReglement
+                        ? ` (réf. ${facture.devis.acompteReferenceReglement})`
+                        : ""
+                    }`
+                  : "Acompte prévu (non réglé à ce jour)"}
+              </Text>
+              <Text style={sharedStyles.totalsValue}>
+                {solde.acompteRegle > 0
+                  ? `- ${formatEuros(solde.acompteRegle)}`
+                  : formatEuros(solde.acomptePrevu)}
+              </Text>
+            </View>
+          ) : null}
+          <View style={sharedStyles.grandTotalRow}>
+            <Text style={sharedStyles.grandTotalLabel}>Reste à payer</Text>
+            <Text style={sharedStyles.grandTotalValue}>{formatEuros(solde.resteAPayer)}</Text>
           </View>
           <View style={sharedStyles.totalsRow}>
             <Text style={sharedStyles.totalsLabel}>Statut du solde</Text>

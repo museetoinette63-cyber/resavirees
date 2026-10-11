@@ -43,16 +43,12 @@ export default async function DevisDetailPage({ params }: { params: Promise<{ id
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-stone-900">Devis {devis.numero}</h1>
-        {devis.pdfUrl ? (
-          <a
-            href={devis.pdfUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm text-stone-600 hover:text-stone-900"
-          >
-            Télécharger le PDF
-          </a>
-        ) : null}
+        <a
+          href={`/api/admin/devis/${devis.id}/pdf`}
+          className="rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100"
+        >
+          Télécharger le PDF
+        </a>
       </div>
 
       {estRattache && devis.reservation ? (

@@ -369,6 +369,9 @@ model SiteSettings {
   sonAmbianceUrl String?
   sonAmbianceNom String?
 
+  // Logo affiché en tête de tous les e-mails envoyés par le site (PNG/JPG).
+  logoUrl String?
+
   updatedAt DateTime @updatedAt
 }
 

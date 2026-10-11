@@ -98,10 +98,24 @@ export function acompteExpireEmail(
 
 /** Envoyée à l'envoi de la facture au client (statut FACTURE_ENVOYEE). */
 export function factureEnvoyeeEmail(
-  facture: { numero: string; montantFinal: Prisma.Decimal },
+  facture: {
+    numero: string;
+    montantFinal: Prisma.Decimal;
+    /** Acompte déjà réglé, déduit du total (0 ou absent : aucun acompte reçu). */
+    acompteRegle?: number;
+    resteAPayer?: number;
+  },
   reservation: { nomOuRaisonSociale: string }
 ): { subject: string; html: string } {
   const subject = `Votre facture ${facture.numero}`;
+  const acompteRegle = facture.acompteRegle ?? 0;
+  const detailSolde =
+    acompteRegle > 0
+      ? `<p>
+      Acompte déjà réglé : <strong>${formatMontant(acompteRegle)}</strong><br />
+      Reste à payer : <strong>${formatMontant(facture.resteAPayer ?? 0)}</strong>
+    </p>`
+      : "";
   const html = wrapHtml(subject, `
     <p>Bonjour ${reservation.nomOuRaisonSociale},</p>
     <p>
@@ -109,6 +123,7 @@ export function factureEnvoyeeEmail(
       <strong>${formatMontant(facture.montantFinal)}</strong> (TVA non applicable, association non
       assujettie).
     </p>
+    ${detailSolde}
     <p>Merci de procéder au règlement du solde restant dû selon les modalités convenues.</p>
   `);
   return { subject, html };

@@ -6,6 +6,7 @@ import { z } from "zod";
 const settingsSchema = z.object({
   siteName: z.string().min(1).optional().nullable(),
   headerImageUrl: z.string().min(1).optional().nullable(),
+  logoUrl: z.string().min(1).optional().nullable(),
   backgroundImageUrl: z.string().min(1).optional().nullable(),
   // Identité légale "expéditeur" + CGV affichées sur les devis/factures PDF
   // (voir prisma/schema.prisma SiteSettings). Pas de contrainte de format

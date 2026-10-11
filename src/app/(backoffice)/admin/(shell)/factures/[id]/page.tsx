@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { formatEuros } from "@/lib/formatMoney";
 import { STATUT_PAIEMENT_LABELS, STATUT_PAIEMENT_COLORS } from "@/lib/reservationStatusLabels";
 import { LignesReadOnlyTable } from "@/components/admin/LignesEditor";
+import { calculerSolde } from "@/lib/facturation/solde";
+import FactureActions from "./FactureActions";
 import FactureEditForm from "./facture-edit-form";
 
 export default async function FactureDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -13,7 +15,9 @@ export default async function FactureDetailPage({ params }: { params: Promise<{ 
     where: { id },
     include: {
       client: true,
-      devis: { include: { reservation: { include: { creneau: { include: { visite: true } } } } } },
+      devis: {
+        include: { client: true, reservation: { include: { creneau: { include: { visite: true } } } } },
+      },
       lignes: { orderBy: { ordre: "asc" } },
     },
   });
@@ -23,6 +27,7 @@ export default async function FactureDetailPage({ params }: { params: Promise<{ 
   }
 
   const estRattachee = !!facture.devis.reservationId;
+  const solde = calculerSolde(facture, facture.devis);
 
   const produits = estRattachee
     ? []
@@ -42,17 +47,15 @@ export default async function FactureDetailPage({ params }: { params: Promise<{ 
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-stone-900">Facture {facture.numero}</h1>
-        {facture.pdfUrl ? (
-          <a
-            href={facture.pdfUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm text-stone-600 hover:text-stone-900"
-          >
-            Télécharger le PDF
-          </a>
-        ) : null}
       </div>
+
+      <FactureActions
+        factureId={facture.id}
+        email={
+          (facture.devis.client ?? facture.client)?.email ?? facture.devis.reservation?.email ?? null
+        }
+        envoyeeLe={facture.envoyeeLe ? facture.envoyeeLe.toISOString() : null}
+      />
 
       {estRattachee && facture.devis.reservation ? (
         <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
@@ -94,6 +97,20 @@ export default async function FactureDetailPage({ params }: { params: Promise<{ 
         <div>
           <p className="text-stone-500">Montant final</p>
           <p className="font-medium text-stone-900">{formatEuros(facture.montantFinal)}</p>
+        </div>
+        <div>
+          <p className="text-stone-500">Acompte</p>
+          <p className="font-medium text-stone-900">
+            {solde.acompteRegle > 0
+              ? `${formatEuros(solde.acompteRegle)} déjà réglé`
+              : solde.acomptePrevu > 0
+                ? `${formatEuros(solde.acomptePrevu)} prévu, non réglé`
+                : "Aucun"}
+          </p>
+        </div>
+        <div>
+          <p className="text-stone-500">Reste à payer</p>
+          <p className="font-semibold text-stone-900">{formatEuros(solde.resteAPayer)}</p>
         </div>
         <div>
           <p className="text-stone-500">TVA</p>

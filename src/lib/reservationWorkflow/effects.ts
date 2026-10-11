@@ -18,9 +18,9 @@ import { prisma } from "../prisma";
 import { transition, type PrismaTransactionClient } from "./transitions";
 import { generateNumero } from "../numbering";
 import { sendMail } from "../email/mailer";
-import { demandeRecueEmail, devisEnvoyeEmail, factureEnvoyeeEmail } from "../email/templates";
+import { demandeRecueEmail, devisEnvoyeEmail } from "../email/templates";
 import { renderDevisPdf } from "../pdf/devisPdf";
-import { renderFacturePdf } from "../pdf/facturePdf";
+import { envoyerFacture } from "../facturation/envoiFacture";
 import { createOrUpdateEvent, deleteEvent } from "../google/calendarSync";
 import { put } from "@vercel/blob";
 
@@ -96,6 +96,7 @@ async function handleDevisEnvoye(reservationId: string): Promise<void> {
   const blob = await put(`devis/${devis.numero}.pdf`, pdfBuffer, {
     access: "public",
     contentType: "application/pdf",
+    allowOverwrite: true,
   });
   const pdfUrl = blob.url;
 
@@ -234,41 +235,9 @@ async function handleFactureEnvoyee(reservationId: string): Promise<void> {
     throw new Error(`FACTURE_ENVOYEE : aucune facture liée à la réservation ${reservationId}`);
   }
 
-  const facture = await prisma.facture.findUniqueOrThrow({
-    where: { id: factureRef.id },
-    include: {
-      devis: {
-        include: { reservation: { include: { creneau: { include: { visite: true } } } }, client: true },
-      },
-      client: true,
-      lignes: true,
-    },
-  });
-
-  const pdfBuffer = await renderFacturePdf(facture);
-
-  const blob = await put(`factures/${facture.numero}.pdf`, pdfBuffer, {
-    access: "public",
-    contentType: "application/pdf",
-  });
-  const pdfUrl = blob.url;
-
-  const updatedFacture = await prisma.facture.update({
-    where: { id: facture.id },
-    data: { pdfUrl, envoyeeLe: new Date() },
-  });
-
-  const { subject, html } = factureEnvoyeeEmail(
-    { numero: updatedFacture.numero, montantFinal: updatedFacture.montantFinal },
-    { nomOuRaisonSociale: reservation.nomOuRaisonSociale }
-  );
-
-  await sendMail({
-    to: reservation.email,
-    subject,
-    html,
-    attachments: [{ filename: `${updatedFacture.numero}.pdf`, content: pdfBuffer }],
-  });
+  // Même envoi que le bouton « Envoyer par e-mail » de la fiche facture
+  // (PDF avec acompte déduit + e-mail au client).
+  await envoyerFacture(factureRef.id);
 }
 
 /**

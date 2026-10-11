@@ -16,6 +16,7 @@ export type SiteSettingsInitial = {
   cgvTexte: string | null;
   sonAmbianceUrl: string | null;
   sonAmbianceNom: string | null;
+  logoUrl: string | null;
 };
 
 function uploadImage(file: File): Promise<string> {
@@ -47,6 +48,8 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
   const [cgvTexte, setCgvTexte] = useState(initial.cgvTexte ?? "");
   const [sonAmbianceUrl, setSonAmbianceUrl] = useState(initial.sonAmbianceUrl ?? "");
   const [sonAmbianceNom, setSonAmbianceNom] = useState(initial.sonAmbianceNom ?? "");
+  const [logoUrl, setLogoUrl] = useState(initial.logoUrl ?? "");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const [uploadingHeader, setUploadingHeader] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
@@ -66,6 +69,20 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
       setErrors([err instanceof Error ? err.message : "Erreur inconnue."]);
     } finally {
       setUploadingHeader(false);
+    }
+  }
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    setErrors([]);
+    try {
+      setLogoUrl(await envoyerImage(file, "site", { logo: true }));
+    } catch (err) {
+      setErrors([err instanceof Error ? err.message : "Erreur inconnue."]);
+    } finally {
+      setUploadingLogo(false);
     }
   }
 
@@ -118,6 +135,7 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
           cgvTexte: cgvTexte || null,
           sonAmbianceUrl: sonAmbianceUrl || null,
           sonAmbianceNom: sonAmbianceNom || null,
+          logoUrl: logoUrl || null,
         }),
       });
       const body = await res.json();
@@ -177,6 +195,39 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
           {headerImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={headerImageUrl} alt="Aperçu en-tête" className="mt-2 h-24 rounded-md object-cover" />
+          ) : null}
+        </div>
+
+        <div className="space-y-1">
+          <label className={labelClass} htmlFor="logo">Logo des e-mails</label>
+          <p className="text-xs text-stone-500">
+            Affiché en haut de chaque e-mail envoyé aux clients (confirmation, devis, facture). Image PNG
+            ou JPG, réduite automatiquement.
+          </p>
+          <input
+            id="logo"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={handleLogoUpload}
+            disabled={uploadingLogo}
+          />
+          {uploadingLogo ? <p className="text-xs text-stone-500">Envoi en cours…</p> : null}
+          {logoUrl ? (
+            <div className="mt-2 space-y-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={logoUrl}
+                alt="Aperçu du logo"
+                className="max-h-24 rounded-md border border-stone-200 bg-white p-2 object-contain"
+              />
+              <button
+                type="button"
+                onClick={() => setLogoUrl("")}
+                className="text-xs text-red-600 underline hover:text-red-800"
+              >
+                Retirer le logo
+              </button>
+            </div>
           ) : null}
         </div>
 
@@ -320,9 +371,25 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
         </div>
       </section>
 
+      {errors.length > 0 ? (
+        <div role="alert" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="font-medium">Les paramètres n&apos;ont pas été enregistrés :</p>
+          <ul className="mt-1 list-inside list-disc">
+            {errors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {success ? (
+        <p role="status" className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          ✓ Paramètres enregistrés.
+        </p>
+      ) : null}
+
       <button
         type="submit"
-        disabled={saving || uploadingHeader || uploadingBackground || uploadingSon}
+        disabled={saving || uploadingHeader || uploadingBackground || uploadingSon || uploadingLogo}
         className="rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50"
       >
         {saving ? "Enregistrement…" : "Enregistrer"}

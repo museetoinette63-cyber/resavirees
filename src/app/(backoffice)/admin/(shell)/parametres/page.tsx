@@ -20,6 +20,7 @@ export default async function AdminParametresPage() {
           cgvTexte: settings?.cgvTexte ?? null,
           sonAmbianceUrl: settings?.sonAmbianceUrl ?? null,
           sonAmbianceNom: settings?.sonAmbianceNom ?? null,
+          logoUrl: settings?.logoUrl ?? null,
         }}
       />
     </div>
