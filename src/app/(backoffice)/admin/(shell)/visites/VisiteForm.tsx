@@ -153,7 +153,7 @@ export default function VisiteForm({
       nom,
       slug,
       description,
-      imageBanniereUrl: imageBanniereUrl || undefined,
+      imageBanniereUrl: imageBanniereUrl || null,
       visible,
       tarifAdulte: Number(tarifAdulte),
       tarifEnfant: Number(tarifEnfant),
@@ -268,12 +268,25 @@ export default function VisiteForm({
         </div>
 
         <div className="space-y-1">
-          <label className={labelClass} htmlFor="image">Image bannière</label>
+          <label className={labelClass} htmlFor="image">Photo de la visite (affichée en entier sur le site)</label>
           <input id="image" type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
           {uploading ? <p className="text-xs text-stone-500">Envoi en cours…</p> : null}
           {imageBanniereUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageBanniereUrl} alt="Aperçu bannière" className="mt-2 h-32 rounded-md object-cover" />
+            <div className="mt-2 space-y-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageBanniereUrl}
+                alt="Aperçu de la photo"
+                className="max-h-56 rounded-md border border-stone-200 bg-stone-100 object-contain"
+              />
+              <button
+                type="button"
+                onClick={() => setImageBanniereUrl("")}
+                className="text-xs text-red-600 underline hover:text-red-800"
+              >
+                Retirer la photo
+              </button>
+            </div>
           ) : null}
         </div>
 

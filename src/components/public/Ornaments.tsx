@@ -31,6 +31,25 @@ function CoinOrne({ className = "" }: { className?: string }) {
   );
 }
 
+// Portail roman : un tympan en demi-cercle orné d'un quadrilobe, sous lequel
+// vient le contenu (photo affichée EN ENTIER, jamais rognée par la courbe).
+export function NicheArcade({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="overflow-hidden rounded-t-full border-2 border-wine-dark bg-ink">
+      <div className="flex aspect-[2/1] items-center justify-center">
+        <svg viewBox="0 0 48 48" aria-hidden="true" className="h-16 w-16 text-ochre" fill="currentColor">
+          <ellipse cx="24" cy="14" rx="5" ry="9" />
+          <ellipse cx="24" cy="34" rx="5" ry="9" />
+          <ellipse cx="14" cy="24" rx="9" ry="5" />
+          <ellipse cx="34" cy="24" rx="9" ry="5" />
+          <circle cx="24" cy="24" r="3.5" className="text-ink" fill="currentColor" />
+        </svg>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 const TAILLES = {
   md: { padding: "p-7 sm:p-8", coin: "h-8 w-8" },
   sm: { padding: "p-5", coin: "h-6 w-6" },

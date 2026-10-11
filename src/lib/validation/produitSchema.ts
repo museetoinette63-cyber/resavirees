@@ -24,6 +24,8 @@ export const produitSchema = z.object({
     .optional(),
   actif: z.boolean(),
   visiteId: z.string().min(1).nullable().optional(),
+  imageUrl: z.string().min(1).nullable().optional(),
+  afficherSurSite: z.boolean().optional(),
 });
 
 export type ProduitInput = z.infer<typeof produitSchema>;

@@ -98,7 +98,7 @@ export default function VisiteRowActions({
   }
 
   async function remove() {
-    if (!confirm("Supprimer définitivement cette visite ?")) return;
+    if (!confirm("Supprimer définitivement cette visite et tous ses créneaux ?")) return;
     setLoading(true);
     setError(null);
     try {

@@ -11,6 +11,8 @@ export type ProduitFormInitialData = {
   dureeMinutes: number | null;
   actif: boolean;
   visiteId: string | null;
+  imageUrl: string | null;
+  afficherSurSite: boolean;
 };
 
 export type VisiteOption = { id: string; nom: string };
@@ -36,10 +38,33 @@ export default function ProduitForm({
   );
   const [actif, setActif] = useState(initialData?.actif ?? true);
   const [visiteId, setVisiteId] = useState(initialData?.visiteId ?? "");
+  const [imageUrl, setImageUrl] = useState(initialData?.imageUrl ?? "");
+  const [afficherSurSite, setAfficherSurSite] = useState(initialData?.afficherSurSite ?? false);
 
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setErrors([]);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "produits");
+      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body?.error ?? "Échec de l'envoi de l'image.");
+      setImageUrl(body.url);
+    } catch (err) {
+      setErrors([err instanceof Error ? err.message : "Erreur inconnue."]);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -53,6 +78,8 @@ export default function ProduitForm({
       dureeMinutes: dureeMinutes.trim() ? Number(dureeMinutes) : null,
       actif,
       visiteId: visiteId || null,
+      imageUrl: imageUrl || null,
+      afficherSurSite,
     };
 
     const parsed = produitSchema.safeParse(payload);
@@ -202,10 +229,54 @@ export default function ProduitForm({
         </div>
       </section>
 
+      <section className="space-y-4 rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
+        <div>
+          <h2 className="text-sm font-semibold text-stone-900">Photo et affichage sur le site</h2>
+          <p className="mt-1 text-xs text-stone-500">
+            La photo s&apos;affiche en entier (sans rognage) sur le site public.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <label className={labelClass} htmlFor="image">Photo du produit</label>
+          <input id="image" type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
+          {uploading ? <p className="text-xs text-stone-500">Envoi en cours…</p> : null}
+          {imageUrl ? (
+            <div className="space-y-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl}
+                alt="Aperçu de la photo"
+                className="max-h-56 rounded-md border border-stone-200 bg-stone-100 object-contain"
+              />
+              <button
+                type="button"
+                onClick={() => setImageUrl("")}
+                className="text-xs text-red-600 underline hover:text-red-800"
+              >
+                Retirer la photo
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            id="afficherSurSite"
+            type="checkbox"
+            checked={afficherSurSite}
+            onChange={(e) => setAfficherSurSite(e.target.checked)}
+          />
+          <label className={labelClass} htmlFor="afficherSurSite">
+            Afficher ce produit sur le site public (section « Nos prestations »)
+          </label>
+        </div>
+      </section>
+
       <div className="flex gap-3">
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || uploading}
           className="rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50"
         >
           {submitting ? "Enregistrement…" : "Enregistrer"}

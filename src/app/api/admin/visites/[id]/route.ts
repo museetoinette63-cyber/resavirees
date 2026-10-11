@@ -106,19 +106,19 @@ export async function DELETE(_request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: "Visite introuvable." }, { status: 404 });
   }
 
-  // Design decision: a Visite with existing Creneau rows is NOT deletable
-  // outright, even if none of them are RESERVE. Bulk créneau creation can
-  // produce hundreds of rows per visite and a booking may reference one by
-  // the time this request lands; forcing the admin to explicitly clear the
-  // créneaux first (via the créneaux screen, which already guards RESERVE
-  // rows individually) is safer than a silent cascade delete here.
-  const creneauCount = await prisma.creneau.count({ where: { visiteId: id } });
-  if (creneauCount > 0) {
+  // Une visite se supprime avec ses créneaux (ils n'ont plus de sens sans
+  // elle), SAUF si une réservation y est rattachée : on ne détruit jamais
+  // l'historique des réservations/devis/factures. Dans ce cas, l'admin doit
+  // masquer la visite (elle disparaît du site mais l'historique reste).
+  const reservationCount = await prisma.reservation.count({
+    where: { creneau: { visiteId: id } },
+  });
+  if (reservationCount > 0) {
     return NextResponse.json(
       {
         error: {
           formErrors: [
-            `Impossible de supprimer cette visite : ${creneauCount} créneau(x) y sont associés. Supprimez-les d'abord depuis la page Créneaux.`,
+            `Impossible de supprimer cette visite : ${reservationCount} réservation(s) y sont rattachées. Utilisez « Masquer » pour la retirer du site en conservant l'historique.`,
           ],
           fieldErrors: {},
         },
@@ -128,8 +128,12 @@ export async function DELETE(_request: NextRequest, { params }: RouteContext) {
   }
 
   // RegleForfait rows cascade-delete automatically (onDelete: Cascade in
-  // prisma/schema.prisma), so deleting the Visite alone is sufficient.
-  await prisma.visite.delete({ where: { id } });
+  // prisma/schema.prisma) ; les créneaux (sans réservation) sont supprimés
+  // dans la même transaction.
+  await prisma.$transaction([
+    prisma.creneau.deleteMany({ where: { visiteId: id } }),
+    prisma.visite.delete({ where: { id } }),
+  ]);
 
   return NextResponse.json({ success: true });
 }

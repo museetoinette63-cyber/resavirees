@@ -54,7 +54,17 @@ export default async function AdminProduitsPage() {
               produits.map((produit) => (
                 <tr key={produit.id}>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-stone-900">{produit.nom}</p>
+                    <div className="flex items-center gap-3">
+                      {produit.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={produit.imageUrl}
+                          alt=""
+                          className="h-12 w-16 rounded border border-stone-200 bg-stone-100 object-contain"
+                        />
+                      ) : null}
+                      <p className="font-medium text-stone-900">{produit.nom}</p>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-stone-700">{formatEuros(produit.prixUnitaire)}</td>
                   <td className="px-4 py-3 text-stone-700">{formatDuree(produit.dureeMinutes)}</td>
@@ -69,6 +79,11 @@ export default async function AdminProduitsPage() {
                     >
                       {produit.actif ? "Actif" : "Inactif"}
                     </span>
+                    {produit.afficherSurSite ? (
+                      <span className="ml-1 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                        Sur le site
+                      </span>
+                    ) : null}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-start justify-end gap-3">

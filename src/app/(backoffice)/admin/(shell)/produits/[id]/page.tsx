@@ -36,6 +36,8 @@ export default async function EditProduitPage({
           dureeMinutes: produit.dureeMinutes,
           actif: produit.actif,
           visiteId: produit.visiteId,
+          imageUrl: produit.imageUrl,
+          afficherSurSite: produit.afficherSurSite,
         }}
       />
     </div>

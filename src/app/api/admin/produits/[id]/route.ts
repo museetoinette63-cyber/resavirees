@@ -65,6 +65,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   if ("prixUnitaire" in body) data.prixUnitaire = parsed.data.prixUnitaire;
   if ("dureeMinutes" in body) data.dureeMinutes = parsed.data.dureeMinutes ?? null;
   if ("actif" in body) data.actif = parsed.data.actif;
+  if ("imageUrl" in body) data.imageUrl = parsed.data.imageUrl ?? null;
+  if ("afficherSurSite" in body) data.afficherSurSite = parsed.data.afficherSurSite;
   if ("visiteId" in body) {
     const visiteId = parsed.data.visiteId ?? null;
     if (visiteId) {

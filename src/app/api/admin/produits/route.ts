@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { visiteId, description, dureeMinutes, ...rest } = parsed.data;
+  const { visiteId, description, dureeMinutes, imageUrl, ...rest } = parsed.data;
 
   if (visiteId) {
     const visite = await prisma.visite.findUnique({ where: { id: visiteId } });
@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
     ...rest,
     description: description ?? null,
     dureeMinutes: dureeMinutes ?? null,
+    imageUrl: imageUrl ?? null,
     visiteId: visiteId ?? null,
   };
 

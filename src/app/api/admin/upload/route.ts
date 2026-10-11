@@ -13,7 +13,7 @@ import { auth } from "@/lib/auth";
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // ~5MB
 const MAX_AUDIO_SIZE_BYTES = 15 * 1024 * 1024; // ~15MB
 
-const IMAGE_FOLDERS = new Set(["visites", "site", "carrousel"]);
+const IMAGE_FOLDERS = new Set(["visites", "site", "carrousel", "produits"]);
 const AUDIO_FOLDERS = new Set(["audio"]);
 
 function extensionForImageMimeType(mimeType: string): string | null {

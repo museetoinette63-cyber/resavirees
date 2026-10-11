@@ -97,6 +97,11 @@ model Produit {
   dureeMinutes Int? // durée typique de la prestation, en minutes
   actif        Boolean @default(true)
 
+  // Photo (affichée en entier) et affichage dans la section "Nos prestations"
+  // du site public. Hors visites réservables : simple présentation.
+  imageUrl        String?
+  afficherSurSite Boolean @default(false)
+
   visiteId String?
   visite   Visite? @relation(fields: [visiteId], references: [id])
 
