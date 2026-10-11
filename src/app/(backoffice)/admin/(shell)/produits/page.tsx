@@ -13,7 +13,12 @@ function formatDuree(minutes: number | null): string {
   return reste === 0 ? `${heures}h` : `${heures}h ${String(reste).padStart(2, "0")}min`;
 }
 
-export default async function AdminProduitsPage() {
+export default async function AdminProduitsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ enregistre?: string }>;
+}) {
+  const { enregistre } = await searchParams;
   const produits = await prisma.produit.findMany({
     orderBy: { nom: "asc" },
     include: { visite: { select: { nom: true } } },
@@ -21,6 +26,11 @@ export default async function AdminProduitsPage() {
 
   return (
     <div className="space-y-6">
+      {enregistre ? (
+        <p role="status" className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          ✓ Le produit a bien été enregistré.
+        </p>
+      ) : null}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-stone-900">Produits</h1>
         <Link

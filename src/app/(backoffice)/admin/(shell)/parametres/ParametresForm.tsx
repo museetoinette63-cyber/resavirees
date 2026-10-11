@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { uploadImage as envoyerImage } from "@/lib/uploadImage";
 
 export type SiteSettingsInitial = {
   siteName: string | null;
@@ -17,14 +18,8 @@ export type SiteSettingsInitial = {
   sonAmbianceNom: string | null;
 };
 
-async function uploadImage(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("folder", "site");
-  const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body?.error ?? "Échec de l'envoi de l'image.");
-  return body.url as string;
+function uploadImage(file: File): Promise<string> {
+  return envoyerImage(file, "site");
 }
 
 async function uploadAudio(file: File): Promise<string> {

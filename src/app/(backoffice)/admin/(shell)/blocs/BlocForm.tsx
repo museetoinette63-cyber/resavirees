@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { uploadImage as envoyerImage } from "@/lib/uploadImage";
 import { blocContenuSchema } from "@/lib/validation/blocContenuSchema";
 
 export type BlocFormInitialData = {
@@ -25,14 +26,8 @@ const EMPLACEMENT_LABELS: Record<BlocFormInitialData["emplacement"], string> = {
   SITE_ENTIER: "Toutes les pages du site",
 };
 
-async function uploadImage(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("folder", "site");
-  const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body?.error ?? "Échec de l'envoi de l'image.");
-  return body.url as string;
+function uploadImage(file: File): Promise<string> {
+  return envoyerImage(file, "site");
 }
 
 export default function BlocForm({

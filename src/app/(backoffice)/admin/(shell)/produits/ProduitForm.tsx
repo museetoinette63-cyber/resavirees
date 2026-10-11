@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { produitSchema } from "@/lib/validation/produitSchema";
+import { uploadImage } from "@/lib/uploadImage";
 
 export type ProduitFormInitialData = {
   nom: string;
@@ -52,13 +53,7 @@ export default function ProduitForm({
     setUploading(true);
     setErrors([]);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "produits");
-      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body?.error ?? "Échec de l'envoi de l'image.");
-      setImageUrl(body.url);
+      setImageUrl(await uploadImage(file, "produits"));
     } catch (err) {
       setErrors([err instanceof Error ? err.message : "Erreur inconnue."]);
     } finally {
@@ -114,7 +109,7 @@ export default function ProduitForm({
       if (mode === "create") {
         router.push(`/admin/produits/${body.produit.id}`);
       } else {
-        router.push("/admin/produits");
+        router.push("/admin/produits?enregistre=1");
       }
       router.refresh();
     } catch (err) {
@@ -123,6 +118,13 @@ export default function ProduitForm({
       setSubmitting(false);
     }
   }
+
+  // Récapitulatif affiché près du bouton « Enregistrer » (le haut du
+  // formulaire est hors écran quand on clique en bas).
+  const messagesErreur = [
+    ...errors,
+    ...Object.entries(fieldErrors).flatMap(([champ, msgs]) => msgs.map((msg) => `${champ} : ${msg}`)),
+  ];
 
   const inputClass =
     "w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none";
@@ -273,13 +275,24 @@ export default function ProduitForm({
         </div>
       </section>
 
+      {messagesErreur.length > 0 ? (
+        <div role="alert" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="font-medium">Le produit n&apos;a pas été enregistré :</p>
+          <ul className="mt-1 list-inside list-disc">
+            {messagesErreur.map((msg, i) => (
+              <li key={i}>{msg}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="flex gap-3">
         <button
           type="submit"
           disabled={submitting || uploading}
           className="rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50"
         >
-          {submitting ? "Enregistrement…" : "Enregistrer"}
+          {submitting ? "Enregistrement…" : uploading ? "Envoi de la photo…" : "Enregistrer"}
         </button>
       </div>
     </form>

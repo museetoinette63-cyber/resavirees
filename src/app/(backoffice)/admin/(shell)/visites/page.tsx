@@ -3,7 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { formatEuros } from "@/lib/formatMoney";
 import VisiteRowActions from "./VisiteRowActions";
 
-export default async function AdminVisitesPage() {
+export default async function AdminVisitesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ enregistre?: string }>;
+}) {
+  const { enregistre } = await searchParams;
   const visites = await prisma.visite.findMany({
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { creneaux: true } } },
@@ -11,6 +16,11 @@ export default async function AdminVisitesPage() {
 
   return (
     <div className="space-y-6">
+      {enregistre ? (
+        <p role="status" className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          ✓ La visite a bien été enregistrée.
+        </p>
+      ) : null}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-stone-900">Visites</h1>
         <Link
