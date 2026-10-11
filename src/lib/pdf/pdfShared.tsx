@@ -6,10 +6,54 @@
  * facture) et reste donc définie dans chaque fichier.
  */
 
-import { View, Text, StyleSheet } from "@react-pdf/renderer";
+import { View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import type { Prisma, StatutPaiement } from "@prisma/client";
 
 export const PARIS_TZ = "Europe/Paris";
+
+export interface LogoPdf {
+  data: Buffer;
+  format: "png" | "jpg";
+}
+
+/**
+ * Télécharge les logos des documents côté serveur. @react-pdf n'accepte que
+ * le PNG et le JPG, et une image injoignable ferait échouer tout le PDF : on
+ * ignore donc silencieusement tout logo illisible ou d'un autre format.
+ */
+export async function chargerLogosPdf(urls: string[]): Promise<LogoPdf[]> {
+  const logos: LogoPdf[] = [];
+  for (const url of urls) {
+    try {
+      const reponse = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (!reponse.ok) continue;
+      const data = Buffer.from(await reponse.arrayBuffer());
+      if (data.length > 2 * 1024 * 1024) continue;
+      if (data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47) {
+        logos.push({ data, format: "png" });
+      } else if (data[0] === 0xff && data[1] === 0xd8) {
+        logos.push({ data, format: "jpg" });
+      }
+    } catch {
+      // logo ignoré : le document est quand même généré
+    }
+  }
+  return logos;
+}
+
+/** Rangée de logos en tête de document (rien si la liste est vide). */
+export function LogosPdf({ logos }: { logos: LogoPdf[] }) {
+  if (logos.length === 0) return null;
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+      {logos.map((logo, i) => (
+        // Image de @react-pdf (pas une <img> HTML) : pas d'attribut alt dans un PDF.
+        // eslint-disable-next-line jsx-a11y/alt-text
+        <Image key={i} src={logo} style={{ height: 46, marginRight: 16, objectFit: "contain" }} />
+      ))}
+    </View>
+  );
+}
 
 /** Formate un montant (Decimal Prisma ou nombre) en euros, format français. */
 export function formatEuros(value: Prisma.Decimal | number | null | undefined): string {

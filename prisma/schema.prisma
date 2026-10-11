@@ -372,6 +372,10 @@ model SiteSettings {
   // Logo affiché en tête de tous les e-mails envoyés par le site (PNG/JPG).
   logoUrl String?
 
+  // Logos (PNG/JPG, dans l'ordre d'affichage) imprimés en tête des PDF de
+  // devis et de factures.
+  logosDocuments String[] @default([])
+
   updatedAt DateTime @updatedAt
 }
 

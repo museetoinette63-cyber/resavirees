@@ -19,6 +19,9 @@ import type { Prisma, SiteSettings } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   sharedStyles,
+  LogosPdf,
+  chargerLogosPdf,
+  type LogoPdf,
   formatEuros,
   formatDateParis,
   statutPaiementLabel,
@@ -41,9 +44,11 @@ export type DevisWithRelations = Prisma.DevisGetPayload<{
 function DevisDocument({
   devis,
   siteSettings,
+  logos,
 }: {
   devis: DevisWithRelations;
   siteSettings: SiteSettings | null;
+  logos: LogoPdf[];
 }) {
   // Destinataire : compte client s'il est lié, sinon coordonnées capturées
   // sur la réservation (un devis manuel peut n'avoir qu'un client, un devis
@@ -67,6 +72,7 @@ function DevisDocument({
   return (
     <Document title={`Devis ${devis.numero}`}>
       <Page size="A4" style={sharedStyles.page}>
+        <LogosPdf logos={logos} />
         <View style={sharedStyles.headerRow}>
           <View>
             <Text style={sharedStyles.docTitle}>DEVIS</Text>
@@ -135,5 +141,6 @@ function DevisDocument({
 /** Rend le PDF du devis dans un Buffer, prêt à être écrit sur disque ou attaché à un e-mail. */
 export async function renderDevisPdf(devis: DevisWithRelations): Promise<Buffer> {
   const siteSettings = await prisma.siteSettings.findUnique({ where: { id: 1 } });
-  return renderToBuffer(<DevisDocument devis={devis} siteSettings={siteSettings} />);
+  const logos = await chargerLogosPdf(siteSettings?.logosDocuments ?? []);
+  return renderToBuffer(<DevisDocument devis={devis} siteSettings={siteSettings} logos={logos} />);
 }

@@ -12,6 +12,9 @@ import { prisma } from "@/lib/prisma";
 import { calculerSolde } from "@/lib/facturation/solde";
 import {
   sharedStyles,
+  LogosPdf,
+  chargerLogosPdf,
+  type LogoPdf,
   formatEuros,
   formatDateParis,
   statutPaiementLabel,
@@ -36,9 +39,11 @@ export type FactureWithRelations = Prisma.FactureGetPayload<{
 function FactureDocument({
   facture,
   siteSettings,
+  logos,
 }: {
   facture: FactureWithRelations;
   siteSettings: SiteSettings | null;
+  logos: LogoPdf[];
 }) {
   const reservation = facture.devis.reservation;
   // Destinataire : compte client (côté devis en priorité, sinon rattaché
@@ -63,6 +68,7 @@ function FactureDocument({
   return (
     <Document title={`Facture ${facture.numero}`}>
       <Page size="A4" style={sharedStyles.page}>
+        <LogosPdf logos={logos} />
         <View style={sharedStyles.headerRow}>
           <View>
             <Text style={sharedStyles.docTitle}>FACTURE</Text>
@@ -164,5 +170,6 @@ function FactureDocument({
 /** Rend le PDF de la facture dans un Buffer, prêt à être écrit sur disque ou attaché à un e-mail. */
 export async function renderFacturePdf(facture: FactureWithRelations): Promise<Buffer> {
   const siteSettings = await prisma.siteSettings.findUnique({ where: { id: 1 } });
-  return renderToBuffer(<FactureDocument facture={facture} siteSettings={siteSettings} />);
+  const logos = await chargerLogosPdf(siteSettings?.logosDocuments ?? []);
+  return renderToBuffer(<FactureDocument facture={facture} siteSettings={siteSettings} logos={logos} />);
 }

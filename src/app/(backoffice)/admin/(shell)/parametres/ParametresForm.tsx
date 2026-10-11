@@ -17,6 +17,7 @@ export type SiteSettingsInitial = {
   sonAmbianceUrl: string | null;
   sonAmbianceNom: string | null;
   logoUrl: string | null;
+  logosDocuments: string[];
 };
 
 function uploadImage(file: File): Promise<string> {
@@ -50,6 +51,8 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
   const [sonAmbianceNom, setSonAmbianceNom] = useState(initial.sonAmbianceNom ?? "");
   const [logoUrl, setLogoUrl] = useState(initial.logoUrl ?? "");
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logosDocuments, setLogosDocuments] = useState<string[]>(initial.logosDocuments);
+  const [uploadingLogosDocs, setUploadingLogosDocs] = useState(false);
 
   const [uploadingHeader, setUploadingHeader] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
@@ -84,6 +87,39 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
     } finally {
       setUploadingLogo(false);
     }
+  }
+
+  async function handleLogosDocumentsUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const fichiers = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (fichiers.length === 0) return;
+    if (logosDocuments.length + fichiers.length > 6) {
+      setErrors(["6 logos maximum sur les documents."]);
+      return;
+    }
+    setUploadingLogosDocs(true);
+    setErrors([]);
+    try {
+      const urls: string[] = [];
+      for (const fichier of fichiers) {
+        urls.push(await envoyerImage(fichier, "site", { logo: true }));
+      }
+      setLogosDocuments((actuels) => [...actuels, ...urls]);
+    } catch (err) {
+      setErrors([err instanceof Error ? err.message : "Erreur inconnue."]);
+    } finally {
+      setUploadingLogosDocs(false);
+    }
+  }
+
+  function deplacerLogoDocument(index: number, sens: -1 | 1) {
+    setLogosDocuments((actuels) => {
+      const cible = index + sens;
+      if (cible < 0 || cible >= actuels.length) return actuels;
+      const copie = [...actuels];
+      [copie[index], copie[cible]] = [copie[cible], copie[index]];
+      return copie;
+    });
   }
 
   async function handleBackgroundUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -136,6 +172,7 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
           sonAmbianceUrl: sonAmbianceUrl || null,
           sonAmbianceNom: sonAmbianceNom || null,
           logoUrl: logoUrl || null,
+          logosDocuments,
         }),
       });
       const body = await res.json();
@@ -228,6 +265,60 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
                 Retirer le logo
               </button>
             </div>
+          ) : null}
+        </div>
+
+        <div className="space-y-1">
+          <label className={labelClass} htmlFor="logosDocuments">Logos des devis et factures</label>
+          <p className="text-xs text-stone-500">
+            Imprimés en haut de chaque PDF de devis et de facture, dans l&apos;ordre ci-dessous (6 maximum).
+            Images PNG ou JPG, réduites automatiquement.
+          </p>
+          <input
+            id="logosDocuments"
+            type="file"
+            multiple
+            accept="image/png,image/jpeg,image/webp"
+            onChange={handleLogosDocumentsUpload}
+            disabled={uploadingLogosDocs || logosDocuments.length >= 6}
+          />
+          {uploadingLogosDocs ? <p className="text-xs text-stone-500">Envoi en cours…</p> : null}
+          {logosDocuments.length > 0 ? (
+            <ul className="mt-2 flex flex-wrap gap-3">
+              {logosDocuments.map((url, i) => (
+                <li key={url} className="space-y-1 rounded-md border border-stone-200 bg-white p-2 text-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt={`Logo ${i + 1}`} className="mx-auto h-16 max-w-[8rem] object-contain" />
+                  <div className="flex justify-center gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => deplacerLogoDocument(i, -1)}
+                      disabled={i === 0}
+                      className="text-stone-600 underline disabled:opacity-30"
+                      aria-label="Déplacer vers la gauche"
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deplacerLogoDocument(i, 1)}
+                      disabled={i === logosDocuments.length - 1}
+                      className="text-stone-600 underline disabled:opacity-30"
+                      aria-label="Déplacer vers la droite"
+                    >
+                      →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLogosDocuments((actuels) => actuels.filter((_, j) => j !== i))}
+                      className="text-red-600 underline hover:text-red-800"
+                    >
+                      Retirer
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           ) : null}
         </div>
 
@@ -389,7 +480,7 @@ export default function ParametresForm({ initial }: { initial: SiteSettingsIniti
 
       <button
         type="submit"
-        disabled={saving || uploadingHeader || uploadingBackground || uploadingSon || uploadingLogo}
+        disabled={saving || uploadingHeader || uploadingBackground || uploadingSon || uploadingLogo || uploadingLogosDocs}
         className="rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50"
       >
         {saving ? "Enregistrement…" : "Enregistrer"}

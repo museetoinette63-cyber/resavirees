@@ -21,6 +21,7 @@ export default async function AdminParametresPage() {
           sonAmbianceUrl: settings?.sonAmbianceUrl ?? null,
           sonAmbianceNom: settings?.sonAmbianceNom ?? null,
           logoUrl: settings?.logoUrl ?? null,
+          logosDocuments: settings?.logosDocuments ?? [],
         }}
       />
     </div>
