@@ -42,7 +42,7 @@ export async function envoyerFacture(id: string): Promise<{ to: string }> {
   if (!facture) throw new ErreurFacture("Facture introuvable.", 404);
 
   const reservation = facture.devis.reservation;
-  const client = facture.devis.client ?? facture.client;
+  const client = facture.client ?? facture.devis.client;
   const to = client?.email ?? reservation?.email;
   if (!to) {
     throw new ErreurFacture(

@@ -44,7 +44,7 @@ function FactureDocument({
   // Destinataire : compte client (côté devis en priorité, sinon rattaché
   // directement à la facture) avec repli sur les coordonnées de la
   // réservation liée, même logique que pour le devis.
-  const client = facture.devis.client ?? facture.client;
+  const client = facture.client ?? facture.devis.client;
   const nom = client?.nomOuRaisonSociale ?? reservation?.nomOuRaisonSociale ?? "-";
   const adresse = client?.adressePostale ?? reservation?.adressePostale ?? null;
   const email = client?.email ?? reservation?.email ?? null;

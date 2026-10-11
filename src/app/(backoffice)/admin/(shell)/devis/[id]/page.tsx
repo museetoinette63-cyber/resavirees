@@ -3,21 +3,31 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatEuros } from "@/lib/formatMoney";
 import { STATUT_PAIEMENT_LABELS, STATUT_PAIEMENT_COLORS } from "@/lib/reservationStatusLabels";
-import { LignesReadOnlyTable } from "@/components/admin/LignesEditor";
 import DevisEditForm from "./devis-edit-form";
 
 export default async function DevisDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const devis = await prisma.devis.findUnique({
-    where: { id },
-    include: {
-      client: true,
-      reservation: { include: { creneau: { include: { visite: true } } } },
-      facture: true,
-      lignes: { orderBy: { ordre: "asc" } },
-    },
-  });
+  const [devis, produits, clients] = await Promise.all([
+    prisma.devis.findUnique({
+      where: { id },
+      include: {
+        client: true,
+        reservation: { include: { creneau: { include: { visite: true } } } },
+        facture: true,
+        lignes: { orderBy: { ordre: "asc" } },
+      },
+    }),
+    prisma.produit.findMany({
+      where: { actif: true },
+      orderBy: { nom: "asc" },
+      select: { id: true, nom: true, prixUnitaire: true, dureeMinutes: true },
+    }),
+    prisma.client.findMany({
+      orderBy: { nomOuRaisonSociale: "asc" },
+      select: { id: true, nomOuRaisonSociale: true, email: true, telephone: true, adressePostale: true },
+    }),
+  ]);
 
   if (!devis) {
     notFound();
@@ -25,13 +35,6 @@ export default async function DevisDetailPage({ params }: { params: Promise<{ id
 
   const estRattache = !!devis.reservationId;
 
-  const produits = estRattache
-    ? []
-    : await prisma.produit.findMany({
-        where: { actif: true },
-        orderBy: { nom: "asc" },
-        select: { id: true, nom: true, prixUnitaire: true, dureeMinutes: true },
-      });
   const produitOptions = produits.map((p) => ({
     id: p.id,
     nom: p.nom,
@@ -53,9 +56,9 @@ export default async function DevisDetailPage({ params }: { params: Promise<{ id
 
       {estRattache && devis.reservation ? (
         <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
-          Ce devis est rattaché à une réservation ({devis.reservation.creneau.visite.nom} —{" "}
-          {devis.reservation.nomOuRaisonSociale}). Les montants et le pointage de l&apos;acompte se
-          gèrent depuis la fiche réservation pour rester cohérents avec le cycle de vie.{" "}
+          Ce devis découle d&apos;une réservation ({devis.reservation.creneau.visite.nom} —{" "}
+          {devis.reservation.nomOuRaisonSociale}). Vous pouvez modifier tout son contenu ci-dessous ; cela ne
+          change pas le statut de la réservation, qui se gère depuis sa fiche.{" "}
           <Link href={`/admin/reservations/${devis.reservationId}`} className="font-medium underline">
             Voir la réservation →
           </Link>
@@ -88,8 +91,10 @@ export default async function DevisDetailPage({ params }: { params: Promise<{ id
           <p className="font-medium text-stone-900">{formatEuros(devis.montantTotal)}</p>
         </div>
         <div>
-          <p className="text-stone-500">TVA</p>
-          <p className="font-medium text-stone-900">{devis.tauxTVA.toString()} %</p>
+          <p className="text-stone-500">Acompte</p>
+          <p className="font-medium text-stone-900">
+            {formatEuros(devis.acompteMontant)} ({devis.acomptePourcentage.toString()} %)
+          </p>
         </div>
         <div>
           <p className="text-stone-500">Facture liée</p>
@@ -105,40 +110,38 @@ export default async function DevisDetailPage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      {estRattache ? (
-        <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-stone-900">Lignes</h2>
-          <LignesReadOnlyTable
-            lignes={devis.lignes.map((l) => ({
-              id: l.id,
-              denomination: l.denomination,
-              quantite: l.quantite,
-              prixUnitaire: l.prixUnitaire.toString(),
-              montantLigne: l.montantLigne.toString(),
-            }))}
-          />
-        </div>
-      ) : null}
-
-      {!estRattache ? (
-        <DevisEditForm
-          devisId={devis.id}
-          nbAdultes={devis.nbAdultes}
-          nbEnfants={devis.nbEnfants}
-          acompteStatutPaiement={devis.acompteStatutPaiement}
-          hasFacture={!!devis.facture}
-          produits={produitOptions}
-          lignesInitiales={devis.lignes.map((l) => ({
-            produitId: l.produitId,
-            denomination: l.denomination,
-            quantite: String(l.quantite),
-            prixUnitaire: l.prixUnitaire.toString(),
-          }))}
-          dateEvenement={devis.dateEvenement ? devis.dateEvenement.toISOString() : null}
-          dureeMinutes={devis.dureeMinutes}
-          notes={devis.notes ?? ""}
-        />
-      ) : null}
+      <DevisEditForm
+        devisId={devis.id}
+        clients={clients}
+        clientId={devis.clientId}
+        destinataire={{
+          nom: devis.client?.nomOuRaisonSociale ?? devis.reservation?.nomOuRaisonSociale ?? "",
+          email: devis.client?.email ?? devis.reservation?.email ?? "",
+          telephone: devis.client?.telephone ?? devis.reservation?.telephone ?? "",
+          adresse: devis.client?.adressePostale ?? devis.reservation?.adressePostale ?? "",
+        }}
+        reservationLiee={estRattache}
+        nbAdultes={devis.nbAdultes}
+        nbEnfants={devis.nbEnfants}
+        produits={produitOptions}
+        lignesInitiales={devis.lignes.map((l) => ({
+          produitId: l.produitId,
+          denomination: l.denomination,
+          quantite: String(l.quantite),
+          prixUnitaire: l.prixUnitaire.toString(),
+        }))}
+        dateEvenement={devis.dateEvenement ? devis.dateEvenement.toISOString() : null}
+        dureeMinutes={devis.dureeMinutes}
+        notes={devis.notes ?? ""}
+        acomptePourcentage={Number(devis.acomptePourcentage)}
+        acompteMontant={Number(devis.acompteMontant)}
+        acompteDelaiJours={devis.acompteDelaiJours}
+        acompteDateLimite={devis.acompteDateLimite ? devis.acompteDateLimite.toISOString() : null}
+        acompteStatutPaiement={devis.acompteStatutPaiement}
+        acompteDateReglement={devis.acompteDateReglement ? devis.acompteDateReglement.toISOString() : null}
+        acompteReferenceReglement={devis.acompteReferenceReglement ?? ""}
+        hasFacture={!!devis.facture}
+      />
     </div>
   );
 }

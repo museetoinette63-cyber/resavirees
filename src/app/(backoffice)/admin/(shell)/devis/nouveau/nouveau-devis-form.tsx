@@ -37,6 +37,8 @@ export default function NouveauDevisForm({
   const [heure, setHeure] = useState("");
   const [dureeMinutes, setDureeMinutes] = useState("");
   const [notes, setNotes] = useState("");
+  const [acomptePourcentage, setAcomptePourcentage] = useState("0");
+  const [acompteDelaiJours, setAcompteDelaiJours] = useState("7");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -67,6 +69,8 @@ export default function NouveauDevisForm({
           dateEvenement: toIsoOrNull(date, heure),
           dureeMinutes: dureeMinutes ? Number(dureeMinutes) : null,
           notes: notes || null,
+          acomptePourcentage: Number(acomptePourcentage) || 0,
+          acompteDelaiJours: Number(acompteDelaiJours) || 0,
         }),
       });
 
@@ -189,6 +193,38 @@ export default function NouveauDevisForm({
       <div className="space-y-2">
         <span className="text-sm font-medium text-stone-700">Lignes</span>
         <LignesEditor produits={produits} lignes={lignes} onChange={setLignes} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label htmlFor="acomptePourcentage" className="text-sm font-medium text-stone-700">
+            Acompte (%)
+          </label>
+          <input
+            id="acomptePourcentage"
+            type="number"
+            min={0}
+            max={100}
+            step="0.01"
+            value={acomptePourcentage}
+            onChange={(e) => setAcomptePourcentage(e.target.value)}
+            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+          />
+          <p className="text-xs text-stone-500">0 = aucun acompte.</p>
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="acompteDelaiJours" className="text-sm font-medium text-stone-700">
+            Délai de règlement (jours)
+          </label>
+          <input
+            id="acompteDelaiJours"
+            type="number"
+            min={0}
+            value={acompteDelaiJours}
+            onChange={(e) => setAcompteDelaiJours(e.target.value)}
+            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+          />
+        </div>
       </div>
 
       <div className="space-y-1">

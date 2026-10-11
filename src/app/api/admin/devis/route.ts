@@ -42,6 +42,8 @@ interface PostBody {
   dateEvenement?: string | null;
   dureeMinutes?: number | null;
   notes?: string | null;
+  acomptePourcentage?: number;
+  acompteDelaiJours?: number;
 }
 
 /**
@@ -145,6 +147,26 @@ export async function POST(request: Request) {
 
   const montantTotal = lignesResult.lignes.reduce((sum, l) => sum + l.quantite * l.prixUnitaire, 0);
 
+  const acomptePourcentage = body?.acomptePourcentage === undefined ? 0 : Number(body.acomptePourcentage);
+  if (!Number.isFinite(acomptePourcentage) || acomptePourcentage < 0 || acomptePourcentage > 100) {
+    return NextResponse.json(
+      { error: "Le pourcentage d'acompte doit être compris entre 0 et 100." },
+      { status: 400 }
+    );
+  }
+  const acompteDelaiJours = body?.acompteDelaiJours === undefined ? 0 : Number(body.acompteDelaiJours);
+  if (!Number.isInteger(acompteDelaiJours) || acompteDelaiJours < 0) {
+    return NextResponse.json(
+      { error: "Le délai de l'acompte doit être un nombre entier de jours." },
+      { status: 400 }
+    );
+  }
+  const acompteMontant = Math.round(((montantTotal * acomptePourcentage) / 100) * 100) / 100;
+  const acompteDateLimite =
+    acompteMontant > 0 && acompteDelaiJours > 0
+      ? new Date(Date.now() + acompteDelaiJours * 86_400_000)
+      : null;
+
   const devis = await prisma.$transaction(async (tx: PrismaTransactionClient) => {
     const numero = await generateNumero("DEVIS", tx);
     return tx.devis.create({
@@ -160,9 +182,10 @@ export async function POST(request: Request) {
         montantAvantMajoration: montantTotal,
         montantTotal,
         tauxTVA: 0,
-        acomptePourcentage: 0,
-        acompteMontant: 0,
-        acompteDelaiJours: 0,
+        acomptePourcentage,
+        acompteMontant,
+        acompteDelaiJours,
+        acompteDateLimite,
         dateEvenement,
         dureeMinutes,
         notes: body?.notes || null,

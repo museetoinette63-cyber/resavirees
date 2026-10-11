@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatEuros } from "@/lib/formatMoney";
 import { STATUT_PAIEMENT_LABELS, STATUT_PAIEMENT_COLORS } from "@/lib/reservationStatusLabels";
-import { LignesReadOnlyTable } from "@/components/admin/LignesEditor";
 import { calculerSolde } from "@/lib/facturation/solde";
 import FactureActions from "./FactureActions";
 import FactureEditForm from "./facture-edit-form";
@@ -11,16 +10,27 @@ import FactureEditForm from "./facture-edit-form";
 export default async function FactureDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const facture = await prisma.facture.findUnique({
-    where: { id },
-    include: {
-      client: true,
-      devis: {
-        include: { client: true, reservation: { include: { creneau: { include: { visite: true } } } } },
+  const [facture, produits, clients] = await Promise.all([
+    prisma.facture.findUnique({
+      where: { id },
+      include: {
+        client: true,
+        devis: {
+          include: { client: true, reservation: { include: { creneau: { include: { visite: true } } } } },
+        },
+        lignes: { orderBy: { ordre: "asc" } },
       },
-      lignes: { orderBy: { ordre: "asc" } },
-    },
-  });
+    }),
+    prisma.produit.findMany({
+      where: { actif: true },
+      orderBy: { nom: "asc" },
+      select: { id: true, nom: true, prixUnitaire: true, dureeMinutes: true },
+    }),
+    prisma.client.findMany({
+      orderBy: { nomOuRaisonSociale: "asc" },
+      select: { id: true, nomOuRaisonSociale: true, email: true, telephone: true, adressePostale: true },
+    }),
+  ]);
 
   if (!facture) {
     notFound();
@@ -29,13 +39,17 @@ export default async function FactureDetailPage({ params }: { params: Promise<{ 
   const estRattachee = !!facture.devis.reservationId;
   const solde = calculerSolde(facture, facture.devis);
 
-  const produits = estRattachee
-    ? []
-    : await prisma.produit.findMany({
-        where: { actif: true },
-        orderBy: { nom: "asc" },
-        select: { id: true, nom: true, prixUnitaire: true, dureeMinutes: true },
-      });
+  // Destinataire effectif du document : fiche client de la facture, sinon
+  // celle du devis, sinon coordonnées de la réservation d'origine.
+  const sourceClient = facture.client ?? facture.devis.client;
+  const reservation = facture.devis.reservation;
+  const destinataire = {
+    nom: sourceClient?.nomOuRaisonSociale ?? reservation?.nomOuRaisonSociale ?? "",
+    email: sourceClient?.email ?? reservation?.email ?? "",
+    telephone: sourceClient?.telephone ?? reservation?.telephone ?? "",
+    adresse: sourceClient?.adressePostale ?? reservation?.adressePostale ?? "",
+  };
+
   const produitOptions = produits.map((p) => ({
     id: p.id,
     nom: p.nom,
@@ -51,17 +65,15 @@ export default async function FactureDetailPage({ params }: { params: Promise<{ 
 
       <FactureActions
         factureId={facture.id}
-        email={
-          (facture.devis.client ?? facture.client)?.email ?? facture.devis.reservation?.email ?? null
-        }
+        email={destinataire.email}
         envoyeeLe={facture.envoyeeLe ? facture.envoyeeLe.toISOString() : null}
       />
 
       {estRattachee && facture.devis.reservation ? (
         <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
           Cette facture découle d&apos;une réservation ({facture.devis.reservation.creneau.visite.nom} —{" "}
-          {facture.devis.reservation.nomOuRaisonSociale}). Montant et pointage du solde se gèrent depuis la
-          fiche réservation.{" "}
+          {facture.devis.reservation.nomOuRaisonSociale}). Vous pouvez modifier tout son contenu ci-dessous ;
+          cela ne change pas le statut de la réservation, qui se gère depuis sa fiche.{" "}
           <Link
             href={`/admin/reservations/${facture.devis.reservationId}`}
             className="font-medium underline"
@@ -74,11 +86,7 @@ export default async function FactureDetailPage({ params }: { params: Promise<{ 
       <div className="grid grid-cols-2 gap-4 rounded-lg border border-stone-200 bg-white p-5 text-sm">
         <div>
           <p className="text-stone-500">Client</p>
-          <p className="font-medium text-stone-900">
-            {facture.client?.nomOuRaisonSociale ??
-              facture.devis.reservation?.nomOuRaisonSociale ??
-              "—"}
-          </p>
+          <p className="font-medium text-stone-900">{destinataire.nom || "—"}</p>
         </div>
         <div>
           <p className="text-stone-500">Statut solde</p>
@@ -124,29 +132,13 @@ export default async function FactureDetailPage({ params }: { params: Promise<{ 
         </div>
       </div>
 
-      {estRattachee ? (
-        <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-stone-900">Lignes</h2>
-          <LignesReadOnlyTable
-            lignes={facture.lignes.map((l) => ({
-              id: l.id,
-              denomination: l.denomination,
-              quantite: l.quantite,
-              prixUnitaire: l.prixUnitaire.toString(),
-              montantLigne: l.montantLigne.toString(),
-            }))}
-          />
-        </div>
-      ) : null}
-
       <FactureEditForm
         factureId={facture.id}
+        clients={clients}
+        clientId={facture.clientId}
+        destinataire={destinataire}
         nbAdultesReel={facture.nbAdultesReel}
         nbEnfantsReel={facture.nbEnfantsReel}
-        soldeStatutPaiement={facture.soldeStatutPaiement}
-        noteLitige={facture.noteLitige ?? ""}
-        notes={facture.notes ?? ""}
-        estRattachee={estRattachee}
         produits={produitOptions}
         lignesInitiales={facture.lignes.map((l) => ({
           produitId: l.produitId,
@@ -154,6 +146,19 @@ export default async function FactureDetailPage({ params }: { params: Promise<{ 
           quantite: String(l.quantite),
           prixUnitaire: l.prixUnitaire.toString(),
         }))}
+        notes={facture.notes ?? ""}
+        noteLitige={facture.noteLitige ?? ""}
+        dateEvenement={facture.devis.dateEvenement ? facture.devis.dateEvenement.toISOString() : null}
+        dureeMinutes={facture.devis.dureeMinutes}
+        acompteMontant={Number(facture.devis.acompteMontant)}
+        acompteStatutPaiement={facture.devis.acompteStatutPaiement}
+        acompteDateReglement={
+          facture.devis.acompteDateReglement ? facture.devis.acompteDateReglement.toISOString() : null
+        }
+        acompteReferenceReglement={facture.devis.acompteReferenceReglement ?? ""}
+        soldeStatutPaiement={facture.soldeStatutPaiement}
+        soldeDateReglement={facture.soldeDateReglement ? facture.soldeDateReglement.toISOString() : null}
+        soldeReferenceReglement={facture.soldeReferenceReglement ?? ""}
       />
     </div>
   );

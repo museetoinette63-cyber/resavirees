@@ -58,10 +58,24 @@ export default async function FacturesListPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-stone-500">{f.noteLitige ? "⚠️" : "—"}</td>
-                <td className="px-4 py-3 text-right">
-                  <Link href={`/admin/factures/${f.id}`} className="text-stone-600 hover:text-stone-900">
-                    Voir
-                  </Link>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-3">
+                    <Link
+                      href={`/admin/factures/${f.id}#modifier`}
+                      className="rounded-md bg-stone-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-700"
+                    >
+                      Modifier
+                    </Link>
+                    <Link href={`/admin/factures/${f.id}`} className="text-stone-600 hover:text-stone-900">
+                      Voir
+                    </Link>
+                    <a
+                      href={`/api/admin/factures/${f.id}/pdf`}
+                      className="text-stone-600 hover:text-stone-900"
+                    >
+                      PDF
+                    </a>
+                  </div>
                 </td>
               </tr>
             ))}
